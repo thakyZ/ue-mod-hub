@@ -14,9 +14,6 @@
 - sort options for mods
 
 
-# Next Release
-
-
 ### v0.9.91
 - Added support for bk2 type movie file mods. 
 - Added backup/restore functionality for movie file mods. 
