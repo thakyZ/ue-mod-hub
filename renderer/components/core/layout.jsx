@@ -43,7 +43,7 @@ export default function DekAppLayoutWrapper({ children }) {
     const [deepLink, linkChanged, consumeDeepLink] = useDeepLinkListener();
     const { requiredModulesLoaded, commonAppData } = useCommonChecks();
     const [deepLinkData, setDeepLinkData] = useState(null);
-    const initialGame = commonAppData?.selectedGame?.id ?? 'palworld';
+    const initialGame = (commonAppData?.selectedGame?.id ?? 'palworld').replace('-demo', '');
     const [theme_id, setThemeID, bg_id, setBgID, bg_opac, setBgOpac] = useThemeSystem(initialGame);
     const [showNavbarModal, setShowNavbarModal] = useState(false);
     const [showNxmModal, setShowNxmModal] = useState(false);

@@ -62,6 +62,15 @@ export default function LogsPage(props) {
             }
             try {
                 ue4ss_log_path = await window.palhub('joinPath', game_data.ue4ss_root, 'UE4SS.log');
+                let path_valid = await window.palhub('checkIsValidFolderPath', ue4ss_log_path);
+                if (!path_valid) {
+                    ue4ss_log_path = await window.palhub('joinPath', game.ue4ss_root, 'ue4ss/UE4SS.log');
+                    path_valid = await window.palhub('checkIsValidFolderPath', ue4ss_log_path);
+                }
+                if (!path_valid) {
+                    console.error('Invalid path for UE4SS log file:', ue4ss_log_path);
+                    return;
+                }
                 const ue4ss_log_string = await window.palhub('readFile', ue4ss_log_path, {encoding : 'utf-8'});
                 await window.palhub('watchForFileChanges', ue4ss_log_path);
                 setUE4SSLogs(ue4ss_log_string.trim());

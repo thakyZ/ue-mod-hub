@@ -289,7 +289,8 @@ class DEAP {
         this._windows[id].on("ready-to-show", () => {
             // this._windows[id].on('window-fully-rendered', () => {
             const can_tiny = assign_systray && !reloading && this._datastore.get("auto-tiny");
-            if (this._config.dev_mode) this._windows[id].webContents.openDevTools();
+            const can_show_console = this._config.dev_mode || this._datastore.get("show-cwin", false);
+            if (can_show_console) this._windows[id].webContents.openDevTools();
             if (!can_tiny) this._windows[id].show();
             else this._windows[id].minimize();
             reloading = false;

@@ -15,7 +15,7 @@ import game_map from '@main/dek/game-map';
 export default function AboutPage() {
     const { t, tA } = useLocalization();
 
-    const gamesArray = Object.keys(game_map).sort((a, b) => {
+    const gamesArray = Object.keys(game_map).filter(a => !a.includes('demo')).sort((a, b) => {
         const aName = t(`games.${a}.name`);
         const bName = t(`games.${b}.name`);
         return aName.localeCompare(bName);
@@ -46,8 +46,6 @@ export default function AboutPage() {
                         </Link>                        
                     </div>
                 </div>
-
-
                 <div className='alert alert-warning text-center mt-3'>
                     <strong>{t('/about.notice')}</strong>
                 </div>
@@ -79,13 +77,15 @@ export default function AboutPage() {
 
                     <h2 className="font-bold mt-3">{t('/about.supported-games')}</h2>
                     {/* align to center */}
-                    <div className='row justify-content-center'>
-                        {gamesArray.map((id) => {
-                            const key = `supported-game-card-${id}`;
-                            const platforms = Object.keys(game_map[id]?.platforms?.game).filter(k => k != 'modloader');
-                            const initGameData = { name: t(`games.${id}.name`), map_data: game_map[id] };
-                            return <GameCardComponent key={key} {...{id, platforms, initGameData, small: true}} />
-                        })}
+                    <div className='col-12'>
+                        <div className='row justify-content-center'>
+                            {gamesArray.map((id) => {
+                                const key = `supported-game-card-${id}`;
+                                const platforms = Object.keys(game_map[id]?.platforms?.game).filter(k => k != 'modloader');
+                                const initGameData = { name: t(`games.${id}.name`), map_data: game_map[id] };
+                                return <GameCardComponent key={key} {...{id, platforms, initGameData, small: true}} />
+                            })}
+                        </div>
                     </div>
                     <small className='text-dark text-center'>{t('/about.more-games-soon')}</small>
                 </div>

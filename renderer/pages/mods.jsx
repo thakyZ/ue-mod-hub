@@ -171,7 +171,7 @@ export default function ModsPage() {
                 new_mods = new_mods.filter(nexusValidationFilter)
 
                 if (![0, 1].includes(modlistID)) {
-                    if (new_mods.length > 8) new_mods = new_mods.slice(0, 8);
+                    if (new_mods.length >= 8) new_mods = new_mods.slice(0, 8);
                     else if (new_mods.length > 4) new_mods = new_mods.slice(0, 4);
                 }
                 setAds(new_ads);

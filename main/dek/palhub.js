@@ -126,8 +126,8 @@ export class Client {
                 for (const [game_key, map_data] of Object.entries(GAME_MAP)) {
                     if (game_key === 'generic') continue; // skip generic
                     
-                    for (const platform of ["steam", "epic", "xbox"]) {
-                        for (const launch_type of ["game", "server"]) {
+                    for (const platform of ["epic", "steam", "xbox"]) {
+                        for (const launch_type of ["demo", "game", "server"]) {
                             // console.log("checking:", platform, launch_type, game_key);
 
 
@@ -135,17 +135,22 @@ export class Client {
                             const data = map_data.platforms?.[launch_type]?.[platform];
                             if (!data) continue; // skip if no data
 
-                            console.log(data);
+                            // console.log(data);
 
                             // {id: "7654321", root: "UEProjectRoot", app: "ServerExeName"}, 
-                            const {root, app} = data;
+                            const {root, app, match=null} = data;
                             if (!root || !app) continue; // skip if no id, root, or app data
 
                             // TODO: TEST: steam://rungameid/STEAMGAMEID
+                            const check_for_egstore = platform === "epic";
+                            const has_egstore = check_for_egstore && await fs.access(path.join(game_path, ".egstore")).then(()=>true).catch(()=>false);
 
                             const app_name = `${app}.exe`;
+
+                            const checkmatch = match ? match.test(game_path) : true;
+
                             // console.log("checking for:", app_name);
-                            if (fileExists(app_name)) { // steam/windows
+                            if (fileExists(app_name) && checkmatch && (!check_for_egstore || has_egstore)) {
                                 console.log("found:", app_name);
                                 const exe_path = path.join(game_path, app_name);
                                 const content_path = path.join(game_path, `${root}/Content`);
@@ -426,7 +431,7 @@ export class Client {
         // console.log({ game_path, game_data });
 
         // determine the actual first entry, ignoring any 'root' directories that may be present
-        const allowedRoots = [game_data.unreal_root, "Binaries", "Content", "Win64", "WinGDK", "Mods", "Paks", "LogicMods", "~mods"];
+        const allowedRoots = [game_data.unreal_root, "Binaries", "Content", "Win64", "WinGDK", "Mods", "Movies", "Paks", "LogicMods", "~mods"];
 
         let ignoredRoots = '';
 
@@ -481,7 +486,7 @@ export class Client {
 
         // if the entry is a file and not in the allowed roots, ignore it
         const part_checker = part => allowedRoots.includes(part);
-        const VALID_FILETYPES = ['pak', 'ucas', 'utoc', 'txt', 'json', 'lua', 'md'];
+        const VALID_FILETYPES = ['pak', 'ucas', 'utoc', 'txt', 'json', 'lua', 'md', 'bk2'];
         const ignored_files = entries.filter(({isDirectory=false, entryName='', size=0}) => { 
             const seemsValid = VALID_FILETYPES.some(ext => entryName.endsWith(`.${ext}`));
             if (!isDirectory && seemsValid) return false;
@@ -505,6 +510,9 @@ export class Client {
                 case "Mods/":
                     if (game_path.includes('XboxGames')) install_path = path.join(game_path, game_data.unreal_root, "Binaries/WinGDK");
                     else install_path = path.join(game_path, game_data.unreal_root, "Binaries/Win64");
+                    break;
+                case "Movies/":
+                    install_path = path.join(game_path, game_data.unreal_root, "Content/Movies");
                     break;
                 case "Paks/":
                     install_path = path.join(game_path, game_data.unreal_root, "Content/Paks");
@@ -533,6 +541,9 @@ export class Client {
                     if (game_path.includes('XboxGames')) install_path = path.join(game_path, game_data.unreal_root, "Binaries/WinGDK");
                     else install_path = path.join(game_path, game_data.unreal_root, "Binaries/Win64");
                     break;
+                case "Movies/":
+                    install_path = path.join(game_path, game_data.unreal_root, "Content");
+                    break;
                 case "Paks/":
                     install_path = path.join(game_path, game_data.unreal_root, "Content");
                     break;
@@ -546,6 +557,9 @@ export class Client {
                     if (zipAssetFound?.found) {
                         // unknown mod type ~ assume regular .pak replacement
                         install_path = path.join(game_path, game_data.unreal_root, "Content/Paks/LogicMods");
+                    } else if (firstFileEntry.entryName.endsWith('.bk2')) {
+                        console.log('install type seems like movie file, assuming Movies/');
+                        install_path = path.join(game_path, game_data.unreal_root, "Content/Movies");
                     } else {
                         console.log('unknown install type assuming ~mods');
                         // unknown mod type ~ assume regular .pak replacement
@@ -560,6 +574,9 @@ export class Client {
             if (zipAssetFound?.found) {
                 // unknown mod type ~ assume regular .pak replacement
                 install_path = path.join(game_path, game_data.unreal_root, "Content/Paks/LogicMods");
+            } else if (firstFileEntry.entryName.endsWith('.bk2')) {
+                console.log('install type seems like movie file, assuming Movies/');
+                install_path = path.join(game_path, game_data.unreal_root, "Content/Movies");
             } else {
                 console.log('unknown install type assuming ~mods');
                 // unknown mod type ~ assume regular .pak replacement
@@ -583,12 +600,18 @@ export class Client {
                 // unzip the mods zip file, and copy it to the game directory
                 const archive = new ArchiveHandler(path.join(cache_path, file.file_name));
                 const entries = await archive.getEntries();
-                // for (const entry of entries) {
-                //     console.log({ entry });
-                // }
 
                 // determine the root path to install this mods files to
                 const [install_path, ignored_files] = await this.determineInstallPath(game_path, entries, forcedRoot);
+
+                for (const entry of entries) {
+                    // do backup if bk2 file
+                    if (entry.entryName.endsWith('.bk2')) {     
+                        console.log("found movie file:", entry.entryName);
+                        await this.backupFileForDelete(path.join(install_path, entry.entryName));
+                    }
+                }
+
 
                 Emitter.emit("install-mod-file", {
                     install_path,
@@ -652,7 +675,9 @@ export class Client {
                         if (game_path.includes('XboxGames')) base_path = path.join(game_path, game_data.unreal_root, "Binaries/WinGDK");
                         else base_path = path.join(game_path, game_data.unreal_root, "Binaries/Win64");
                         break;
-
+                    case "Movies/":
+                        base_path = path.join(game_path, game_data.unreal_root, "Content");
+                        break;
                     case "Paks/":
                         base_path = path.join(game_path, game_data.unreal_root, "Content");
                         break;
@@ -673,11 +698,18 @@ export class Client {
 
                     await fs.unlink(fileordir);
                     used_entries.push(entry);
+
+                    // do backup if bk2 file
+                    if (fileordir.endsWith('.bk2')) {     
+                        console.log("restoring movie file:", fileordir);
+                        await this.restoreBackupFile(fileordir);
+                    }
+
                 }
 
                 // sort entries from longest to shortest to ensure we delete the deepest directories first
                 entries.sort((a, b) => b.length - a.length);
-
+                
                 for (const entry of entries) {
                     if (used_entries.includes(entry)) continue;
                     const fileordir = path.join(base_path, entry);
@@ -937,6 +969,37 @@ export class Client {
         return true;
     }
 
+    static async fetchLatestUE4SSVersion() {
+        // fetch the latest release from the UE4SS github repo
+        const release_url = 'https://api.github.com/repos/UE4SS-RE/RE-UE4SS/releases/latest';
+        return new Promise((resolve, reject) => {
+            https.get(release_url, { headers: { 'User-Agent': 'Node.js' } }, (response) => {
+                if (response.statusCode !== 200) {
+                    return reject(new Error(`Failed to fetch latest UE4SS version (${response.statusCode})`));
+                }
+                let data = '';
+                response.on('data', (chunk) => {
+                    data += chunk;
+                });
+                response.on('end', () => {
+                    try {
+                        const releaseData = JSON.parse(data);
+                        const version = releaseData.tag_name.replace('v', '');
+                        const downloadUrl = releaseData.assets.find(asset => asset.name.includes(`UE4SS_v${version}.zip`))?.browser_download_url;
+                        if (!downloadUrl) {
+                            return reject(new Error('Download URL not found in release data'));
+                        }
+                        resolve({ version, downloadUrl });
+                    } catch (error) {
+                        reject(new Error(`Failed to parse release data: ${error.message}`));
+                    }
+                });
+            }).on('error', (error) => {
+                reject(new Error(`Failed to fetch latest UE4SS version: ${error.message}`));
+            });
+        });
+    }
+
 
     // downloads latest release from the UE4SS github repo
     // https://github.com/UE4SS-RE/RE-UE4SS/releases
@@ -944,9 +1007,27 @@ export class Client {
     // https://github.com/UE4SS-RE/RE-UE4SS/releases/download/v3.0.1/UE4SS_v3.0.1.zip
     static async downloadAndInstallUE4SS(cache_dir, game_path, options) {
         // get latest release download url:
-        const ue4ss_version = options.version ?? '3.0.1';
+        // let ue4ss_version = null;
+        const ue4ss_version = options.version ?? 'v3.0.1';
+        const ue4ss_zip = options.zip ?? `UE4SS_${ue4ss_version}.zip`;
+
+        // if (options.version === 'experimental-latest') {
+        //     // fetch the latest experimental version
+        //     try {
+        //         const latestRelease = await this.fetchLatestUE4SSVersion();
+        //         ue4ss_version = latestRelease.version;
+        //         console.log("Latest experimental UE4SS version:", ue4ss_version);
+        //     } catch (error) {
+        //         console.error("Failed to fetch latest experimental UE4SS version:", error);
+        //         return false;
+        //     }
+        // } else {
+        //     ue4ss_version = options.zip ?? options.version ?? '3.0.1';
+        // }
+
+
         const release_url = 'https://github.com/UE4SS-RE/RE-UE4SS/releases';
-        const url = `${release_url}/download/v${ue4ss_version}/UE4SS_v${ue4ss_version}.zip`;
+        const url = `${release_url}/download/${ue4ss_version}/${ue4ss_zip}`;
 
         try {
             const path_data = await this.validateGamePath(game_path);
@@ -1003,7 +1084,7 @@ export class Client {
             const ue4ss_install_dir = path_data.ue4ss_root;
             console.log("uninstalling UE4SS from", ue4ss_install_dir);
 
-            const archive = new ArchiveHandler(path.join(cache_dir, `UE4SS_v${options.version}.zip`));
+            const archive = new ArchiveHandler(path.join(cache_dir, options.zip ?? `UE4SS_${options.version}.zip`));
             const entries = await archive.getEntries();
             // remove each entry
             for (const entry of entries) {
@@ -1069,6 +1150,31 @@ export class Client {
         // await fs.copyFile(game_data.install_script, path.join(game_path, game_data.install_script.split("/").pop()));
         await fs.cp(mods_root, game_path, { recursive: true, force: true });
         console.log('installed app specific mods:', game_id);
+    }
+
+
+    static async backupFileForDelete(filePath) {
+        const backupPath = `${filePath}.bak`;
+        try {
+            await fs.copyFile(filePath, backupPath);
+            console.log(`Backup created at: ${backupPath}`);
+            return backupPath;
+        } catch (error) {
+            console.error(`Failed to create backup for ${filePath}:`, error);
+            throw error;
+        }
+    }
+    static async restoreBackupFile(filePath) {
+        const backupPath = `${filePath}.bak`;
+        try {
+            await fs.copyFile(backupPath, filePath);
+            console.log(`Backup restored from: ${backupPath}`);
+            // Optionally, delete the backup after restoring
+            await fs.unlink(backupPath);
+        } catch (error) {
+            console.error(`Failed to restore backup for ${filePath}:`, error);
+            throw error;
+        }
     }
 
 

@@ -192,11 +192,14 @@ export default function ModFileCard({mod, file, triggers=null, showHR=true}) {
     //     return null;
     // }    
 
+    console.log(file)
+
     return <div className='row' style={{minHeight:92}}>
         <div className={`col`}>
             <div className='row'>
                 <div className='col'>
                     <h6 className={`pe-3 mb-0`}>{t('modals.mod-details.file-version', {file})}</h6>
+                    {/* <h6 className='mb-0'>{file.file_name}</h6> */}
                     <small className='text-dark'>{t('modals.mod-details.file-info', {
                         date: new Date(file.uploaded_time).toLocaleString(language ?? 'en', { dateStyle: 'medium', timeStyle: 'short' }), 
                         size: bytesToSize(file.size_in_bytes),

@@ -1,0 +1,43 @@
+:root {
+	--dek-gen-version: 0.0.96;
+	--dek-body-color: #050A1E; /* Nearly black deep navy */
+	--dek-text-color: #B3B6D1; /* Soft muted periwinkle */
+
+	--dek-modal-body-color: #0E1433; /* Dark midnight blue */
+	--dek-modal-text-color: #999CC2; /* Muted lavender blue */
+	--dek-modal-border-color: #1C2047; /* Deep indigo with red tint */
+
+	--dek-card-body-color: #131A40; /* Dark blue with faint red undertone */
+	--dek-card-text-color: #B1B4D3; /* Pale periwinkle */
+	--dek-card-header-color: #2B2F54; /* Dark indigo with crimson shadows */
+
+	--dek-primary-normal: #2D3572; /* Medium dark royal blue */
+	--dek-primary-darker: #242B58; /* Deep indigo blue */
+	--dek-primary-darkest: #191F3A; /* Very dark navy-blue */
+	--dek-primary-light: #5A64A3; /* Soft muted blue */
+
+	--dek-secondary-normal: #424D82; /* Slate blue */
+	--dek-secondary-darker: #313B62; /* Dark steel blue */
+	--dek-secondary-darkest: #202843; /* Almost black blue */
+	--dek-secondary-light: #6D74B0; /* Light lavender blue */
+
+	--dek-info-normal: #464F7C; /* Muted indigo */
+	--dek-info-darker: #303761; /* Dark muted blue */
+	--dek-info-darkest: #1C2344; /* Near black indigo */
+	--dek-info-light: #757DB2; /* Pale slate blue */
+
+	--dek-success-normal: #552A3C; /* Dark muted maroon */
+	--dek-success-darker: #3D1C29; /* Very dark crimson */
+	--dek-success-darkest: #290F1A; /* Almost black maroon */
+	--dek-success-light: #7A566F; /* Muted rose */
+
+	--dek-warning-normal: #6F3240; /* Dark brick red */
+	--dek-warning-darker: #4D212A; /* Deep muted red */
+	--dek-warning-darkest: #32161E; /* Very dark red */
+	--dek-warning-light: #9A6371; /* Soft dusty red */
+
+	--dek-danger-normal: #601F2E; /* Deep burgundy */
+	--dek-danger-darker: #3F131F; /* Near black crimson */
+	--dek-danger-darkest: #270D14; /* Very dark maroon */
+	--dek-danger-light: #8B4659; /* Muted dark pink */
+}

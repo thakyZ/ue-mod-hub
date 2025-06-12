@@ -1,7 +1,7 @@
 
 ### TODO: 
 - FIX: rename palhub.config files to modhub.config
-- Add proper support for movie type mods. 
+- ensure sufficient space on drives for mod files for cache/install.
 - the ability to add more than 1 version of a specific mod <3
 - add optional symlink/direct copy options for deploying mods.
 - variable install location when installing downloaded mod.
@@ -13,13 +13,35 @@
 - properly setup github actions 
 - sort options for mods
 
+
+# Next Release
+
+
+### v0.9.91
+- Added support for bk2 type movie file mods. 
+- Added backup/restore functionality for movie file mods. 
+- Bugfix: 8 mods should now be shown on latest/trending pages when available. 
+
+
+### v0.9.83
+- Changed display for mod files from using `file.file_name` to `file.name`.
+- Bugfix: changed default app cache path to use documents folder instead. 
+- Added support for Stellar Blade && Stellar Blade Demo.
+- Added 'stellar' customization theme and bg images. 
+- Small position improvements for some elements. 
+- Small changes to 'Setup Help' page to update images. 
+- Small text fixes
+
+
 ### v0.8.90
 - Bugfix for certain files that should be placed into ~mods being placed into LogicMods. 
 - Fixed issue of mod not opening correct page when clicking file link. (from modlist)
 
+
 ### v0.8.87
 - Added redirect to settings for 'play' page when app not setup. 
 - Fixed issue of mod not opening correct page when clicking file link. 
+
 
 ### v0.8.85
 - Fix for 7z archives crashing the application (due to checking their pak file for logic mods)
@@ -32,15 +54,18 @@
 - Changed theme selection design from beta. 
 - Added changelog info to about page of app. 
 
+
 ### v0.8.75
 - Fix for manually installed mods not showing unless 'downloaded mods' have also been added. 
 - Fix for certain zip archives with logic mod pak file installing to ~mods folder rather than LogicMods. 
 - Fix for mod pages not properly updating after a mod is added/removed
 - Fix for locally installed mods popup not closing on uninstall mod
 
+
 ### v0.8.69
 - Fixed issue of cache directory being incorrectly named on first boot. 
 - Fixed issue of app not redirecting to settings page on first boot. 
+
 
 ### v0.8.68
 - Fixed issue of zip archives with logic mod pak file installing to ~mods folder rather than LogicMods. 
@@ -53,6 +78,7 @@
 - Fixed issue of 'Discord RPC' not updating status. 
 - Disabled Logs->Application/Game selection when no ue4ss available for game logs.
 
+
 ### v0.8.36
 - REBRANDED APP FROM `PalHUB Client` to `UE Mod Hub` due to now supporting multiple unreal engine games. 
 - Moved default cache location to the folder that app is installed to.  
@@ -62,6 +88,7 @@
 - Fixed issue with 'save ue4ss config' button causing crash. 
 - Added 'ff7' and 'mako' themes for final fantasy 7 users. 
 - Added 'Discord RPC' for the application.
+
 
 ### v0.7.20
 - Added 'Supported Games' list to 'About' page.
@@ -80,6 +107,7 @@
   - unpacked app size change: 434MB -> 326MB (24.88% reduction)
   - installer size change: 125MB -> 98MB (21.6% reduction)
 
+
 ### v0.6.90
 - Unlocked 'servers' tab for listing modified steam servers (beta feature).
 - Added app mods for steam palworld (for auto join dedicated server).
@@ -87,6 +115,7 @@
 - Added 'Setup Help' page to detail application setup for new users.
 - Fixed issue causing 'Launch Palworld' button to not work correctly. 
 - Various small code improvements + FAQ enhancements
+
 
 ### v0.6.80
 - Added support for 7z archive types.
@@ -99,8 +128,10 @@
 - App now sets the cache directory to use the appdata folder by default (recommended to configure to a not appdata folder, but users kept putting their game path in there. hopefully this will help make it more clear.)
 - Added multiple FAQs.
 
+
 ### v0.6.13
 - Fixed issue where api key was being saved within application activity log. 
+
 
 ### v0.6.10
 - Initial Release of application on Nexus Mods.

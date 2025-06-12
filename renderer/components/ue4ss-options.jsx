@@ -88,7 +88,16 @@ export default function Ue4ssConfigurator({ game }) {
             }
         }
         // const new_ini_string = stringify(settings);
-        const ini_path = await window.palhub('joinPath', game.ue4ss_root, 'UE4SS-settings.ini');
+        let ini_path = await window.palhub('joinPath', game.ue4ss_root, 'UE4SS-settings.ini');
+        let path_valid = await window.palhub('checkIsValidFolderPath', ini_path);
+        if (!path_valid) {
+            ini_path = await window.palhub('joinPath', game.ue4ss_root, 'ue4ss/UE4SS-settings.ini');
+            path_valid = await window.palhub('checkIsValidFolderPath', ini_path);
+        }
+        if (!path_valid) {
+            console.error('Invalid path for UE4SS settings:', ini_path);
+            return;
+        }
         await window.palhub('writeFile', ini_path, updated_ini, { encoding: 'utf-8' });
         setHasChanges(false);
     }, [requiredModulesLoaded, game, settings, rawINI]);
@@ -97,7 +106,16 @@ export default function Ue4ssConfigurator({ game }) {
         (async () => {
             if (!requiredModulesLoaded) return;
             if (!game?.has_exe || !game?.has_ue4ss) return;
-            const ini_path = await window.palhub('joinPath', game.ue4ss_root, 'UE4SS-settings.ini');
+            let ini_path = await window.palhub('joinPath', game.ue4ss_root, 'UE4SS-settings.ini');
+            let path_valid = await window.palhub('checkIsValidFolderPath', ini_path);
+            if (!path_valid) {
+                ini_path = await window.palhub('joinPath', game.ue4ss_root, 'ue4ss/UE4SS-settings.ini');
+                path_valid = await window.palhub('checkIsValidFolderPath', ini_path);
+            }
+            if (!path_valid) {
+                console.error('Invalid path for UE4SS settings:', ini_path);
+                return;
+            }
             const ini_string = await window.palhub('readFile', ini_path, { encoding: 'utf-8' });
             setSettings(parse(ini_string));
             setRawINI(ini_string);

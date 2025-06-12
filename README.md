@@ -61,6 +61,9 @@ List your Palworld server in UE Mod Hub using the `UE Mod Hub (Server Listing Mo
 - Black Myth Wukong
 - Lockdown Protocol
 - Tekken 8
+- Stellar Blade
+- Orcs Must die 3
+- Orcs Must Die: Deathtrap
 - More coming soon <3
 <hr class="mt-1">
 

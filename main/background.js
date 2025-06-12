@@ -53,10 +53,10 @@ DEAP.setup(config, ()=>{ // then run this callback
     let appDataPath = DEAP.app.getAppPath();
     if (DEAP.app.isPackaged) {
         // appDataPath = path.dirname(DEAP.app.getPath('exe'));
-        appDataPath = DEAP.app.getPath("userData");
+        appDataPath = DEAP.app.getPath("documents");
     }
     console.log('App data path:', appDataPath);
-    const appFolder = path.join(appDataPath, 'ModCache');
+    const appFolder = path.join(appDataPath, 'ModHubCache');
     if (!fs.existsSync(appFolder)) {
         console.log('Creating app folder: ', appFolder);
         fs.mkdirSync(appFolder, { recursive: true });

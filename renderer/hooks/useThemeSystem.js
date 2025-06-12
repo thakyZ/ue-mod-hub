@@ -15,7 +15,7 @@ export const THEMES = [
     'ikon',
     'khakii',
     'hogleg',
-    
+    'stellar',
     
     '1',
     '2',
@@ -43,8 +43,8 @@ export const THEMES = [
 export default function useThemeSystem(game_id) {
     // const [theme_id, setTempThemeID] = useState(parseInt(base_theme_id));
     const [theme_id, setTempThemeID] = useState(0);
-    const [bg_id, setTempBgID] = useState(0);
     const [bg_opac, setTempBgOpac] = useState(0);
+    const [bg_id, setTempBgID] = useState(0);
 
     const setThemeID = useCallback((newtheme) => {
         if (typeof window === 'undefined') return null;
@@ -76,7 +76,7 @@ export default function useThemeSystem(game_id) {
         let base_theme_opac = 0;
         if (typeof window !== 'undefined') {
             // localStorage.setItem(key, value)
-            base_theme_id = window.localStorage.getItem('utheme-id') || 2;
+            base_theme_id = window.localStorage.getItem('utheme-id') || 7;
             base_theme_bg = window.localStorage.getItem('utheme-bg') || 0;
             base_theme_opac = window.localStorage.getItem('utheme-bgopac') || 0;
         }

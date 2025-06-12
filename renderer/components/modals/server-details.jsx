@@ -123,7 +123,7 @@ export default function ServerDetailsModal({ show, setShow, server }) {
             // check all required mods are installed:
             for (const [index, { mod, file }] of servermodFiles.entries()) {
                 const is_downloaded = await window.palhub('checkModFileIsDownloaded', cache_dir, file);
-                const is_installed = await window.palhub('checkModIsInstalled', game_path, mod, file);
+                const is_installed = await window.palhub('checkModIsInstalled', game_path, mod);//, file);
                 if (!is_downloaded) throw new Error('mod not downloaded:', mod, file);
                 if (!is_installed) throw new Error('mod not installed:', mod, file);
             }
@@ -144,12 +144,13 @@ export default function ServerDetailsModal({ show, setShow, server }) {
 
             console.log('launching game:', game_data.exe_path);
             await window.palhub('launchExe', game_data.exe_path);
+            onCancel();
         } catch (error) {
             console.log('onClickJoinServer error:', error);
             setHasGotPassword(passwordRef?.current?.value?.length);
             setHasGotMods(false);
         }
-    }, [server, servermodFiles, passwordRef, rememberPassword, commonAppData]);
+    }, [server, servermodFiles, passwordRef, rememberPassword, commonAppData, onCancel]);
 
     const onInstallServerModList = React.useCallback(async () => {
         console.log('onInstallServerModList');

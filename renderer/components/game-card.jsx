@@ -59,7 +59,7 @@ export default function gameCardComponent({ id, path, onClick=()=>{}, tempGame=n
             <Card.Body className='text-start p-0'>
                 <Card.Title className='p-1'>
                     <div className="ratio ratio-16x9">
-                        <Image src={`/img/${id}/game-logo.webp`} alt="Game Logo Image" fluid thumbnail />
+                        <Image src={`/img/${id.replace('-demo', '')}/game-logo.webp`} alt="Game Logo Image" fluid thumbnail />
                     </div>
                     <div className='modcard set-topleft p-1 bg-info'>
                         {platforms && <div className='d-flex gap-1'>
