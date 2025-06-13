@@ -1,6 +1,6 @@
 @echo off
 set "EXE_NAME=UE Mod Hub.exe"
-set "LOG_FILE=UE Mod Hub Debug.txt"
+set "LOG_FILE=C:\UE Mod Hub Debug.txt"
 
 echo Running %EXE_NAME%... > "%LOG_FILE%"
 echo --------------------------- >> "%LOG_FILE%"

@@ -35,6 +35,7 @@ export default function PlayPage() {
     const {gamesArray, activeGame, selectedGameID} = useActiveGame();
     const game = activeGame;
     
+    
     const onClickCheckMods = React.useCallback(async () => {
         if (!requiredModulesLoaded) return;
         setShowCheckModsModal(true);

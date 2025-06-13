@@ -1,6 +1,6 @@
 {
     "private": true,
-    "version": "0.9.98",
+    "version": "0.10.3",
     "name": "dekita-ue-mod-hub",
     "productName": "UE Mod Hub",
     "description": "UE Mod Hub written by DekitaRPG",
@@ -81,6 +81,6 @@
     },
     "release": {
         "date": "6/13/2025",
-        "time": "2:32:14 AM"
+        "time": "6:30:01 AM"
     }
 }

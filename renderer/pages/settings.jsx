@@ -510,14 +510,14 @@ function SettingsPage_Theme({ThemeController}) {
     const game_id = commonAppData?.selectedGame?.id;
     const { t, tA } = useLocalization();
 
-    console.log('ThemeController', ThemeController.bg_opac);
+    // console.log('ThemeController', ThemeController.bg_opac);
 
     const OnChangeTheme = React.useCallback((e, v, iText, i) => {
         console.log('ThemeController.setThemeID', {e, v, iText, i});
         ThemeController.setThemeID(iText);
-    }, [ThemeController.setThemeID]);
+    }, [ThemeController?.setThemeID]);
 
-    if (!requiredModulesLoaded) return null;
+    if (!requiredModulesLoaded || !ThemeController) return null;
     return <React.Fragment>
 
         <div className='row'>
@@ -527,10 +527,10 @@ function SettingsPage_Theme({ThemeController}) {
                     tooltip={t('/settings.options.theme-color.desc')}
                 />
                 <DekSelect 
-                    active_id={Number(ThemeController.theme_id)} 
+                    active_id={Number(ThemeController?.theme_id)} 
                     onChange={OnChangeTheme}>
-                    {ThemeController.themes.map((theme, i) => {
-                        return <dekItem key={i} text={theme} active={ThemeController.theme_id === i} />
+                    {ThemeController?.themes.map((theme, i) => {
+                        return <dekItem key={i} text={theme} active={ThemeController?.theme_id === i} />
                     })}
                 </DekSelect>
             </div>
@@ -543,10 +543,10 @@ function SettingsPage_Theme({ThemeController}) {
                 <DekChoice
                     className="pb-3"
                     disabled={false}
-                    active={Number(ThemeController.bg_id)}
+                    active={Number(ThemeController?.bg_id)}
                     choices={[1,2,3]}
                     //tA(`games.${game_id}.theme-images`)}
-                    onClick={(i, value) => ThemeController.setBgID(i)}
+                    onClick={(i, value) => ThemeController?.setBgID(i)}
                 />
             </div>
             <div className='col'>
@@ -557,9 +557,9 @@ function SettingsPage_Theme({ThemeController}) {
                 <DekChoice
                     className="pb-3"
                     disabled={false}
-                    active={Number(ThemeController.bg_opac)}
+                    active={Number(ThemeController?.bg_opac)}
                     choices={tA(`games.generic.theme-opacities`, 3)}
-                    onClick={(i, value) => ThemeController.setBgOpac(i)}
+                    onClick={(i, value) => ThemeController?.setBgOpac(i)}
                 />
             </div>
         </div>

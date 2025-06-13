@@ -11,6 +11,8 @@ export default function useActiveGame() {
     const gamesArray = React.useMemo(()=> {
         const gamesArray = [];
         const game = commonAppData?.selectedGame;
+        if (!commonAppData) return gamesArray;
+
         for (const [id, data] of Object.entries(commonAppData?.games)) {
             if (id === 'active') continue;
             for (const [type, platform_data] of Object.entries(data)) {

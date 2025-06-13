@@ -6,7 +6,10 @@ module.exports = {
     trailingSlash: true,
     distDir: process.env.NODE_ENV === 'production' ? '../app' : '.next',
     images: {unoptimized: true},
+    productionBrowserSourceMaps: true,
     webpack: (config) => {
+        config.devtool = 'source-map'; // Needed for better renderer debugging
+
         // Add support for importing SVG files using @svgr/webpack
         config.module.rules.push({
             test: /\.svg$/i,

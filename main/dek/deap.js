@@ -167,6 +167,15 @@ class DEAP {
                 properties: ["openFile"],
             });
         });
+        ipcMain.handle("open-console-window", async (event, id) => {
+            if (!this._windows[id]) return false;
+            if (this._windows[id].webContents.isDevToolsOpened()) {
+                this._windows[id].webContents.closeDevTools();
+            } else {
+                this._windows[id].webContents.openDevTools({ mode: "detach" });
+            }
+            return true;
+        });
         ipcMain.handle("save-file-dialog", async (event) => {
             const filters = [{ name: "Stylesheet", extensions: ["css"] }];
             return await dialog.showSaveDialog({ filters });

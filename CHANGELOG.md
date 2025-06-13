@@ -16,6 +16,10 @@
 - support for splash screen mods
 
 
+### v0.10.3
+- Added ErrorWrapper component, sourcemaps, and button to open browser console window for easier live debugging the client side error issue. 
+- Small change to useActiveGame hook to hopefully solve some client side error issues. 
+
 ### v0.9.98
 - Added `run-debug.bat` file + `UE Mod Hub Debug.txt` to assist in debugging live version
 - Added support for bmp type splash screen mods with backup/restore of og file. 
