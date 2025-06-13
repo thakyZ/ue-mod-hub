@@ -9,9 +9,16 @@
 - add support for games listed in zCustomGameConfigs? 
 - cleanup of files because omg they are a mess atm..
 - make free user experience even more streamlined.
+- let users select what files to install from a mod
 - determine if any pak files edit the same asset? 
 - properly setup github actions 
 - sort options for mods
+- support for splash screen mods
+
+
+### v0.9.98
+- Added `run-debug.bat` file + `UE Mod Hub Debug.txt` to assist in debugging live version
+- Added support for bmp type splash screen mods with backup/restore of og file. 
 
 
 ### v0.9.91

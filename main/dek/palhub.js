@@ -486,7 +486,7 @@ export class Client {
 
         // if the entry is a file and not in the allowed roots, ignore it
         const part_checker = part => allowedRoots.includes(part);
-        const VALID_FILETYPES = ['pak', 'ucas', 'utoc', 'txt', 'json', 'lua', 'md', 'bk2'];
+        const VALID_FILETYPES = ['pak', 'ucas', 'utoc', 'txt', 'json', 'lua', 'md', 'bk2', 'bmp'];
         const ignored_files = entries.filter(({isDirectory=false, entryName='', size=0}) => { 
             const seemsValid = VALID_FILETYPES.some(ext => entryName.endsWith(`.${ext}`));
             if (!isDirectory && seemsValid) return false;
@@ -513,6 +513,9 @@ export class Client {
                     break;
                 case "Movies/":
                     install_path = path.join(game_path, game_data.unreal_root, "Content/Movies");
+                    break;
+                case "Splash/":
+                    install_path = path.join(game_path, game_data.unreal_root, "Content/Splash");
                     break;
                 case "Paks/":
                     install_path = path.join(game_path, game_data.unreal_root, "Content/Paks");
@@ -544,6 +547,9 @@ export class Client {
                 case "Movies/":
                     install_path = path.join(game_path, game_data.unreal_root, "Content");
                     break;
+                case "Splash/":
+                    install_path = path.join(game_path, game_data.unreal_root, "Content");
+                    break;
                 case "Paks/":
                     install_path = path.join(game_path, game_data.unreal_root, "Content");
                     break;
@@ -560,6 +566,9 @@ export class Client {
                     } else if (firstFileEntry.entryName.endsWith('.bk2')) {
                         console.log('install type seems like movie file, assuming Movies/');
                         install_path = path.join(game_path, game_data.unreal_root, "Content/Movies");
+                    } else if (/splash/i.test(firstFileEntry.entryName) && firstFileEntry.entryName.endsWith('.bmp')) {
+                        console.log('install type seems like image file, assuming Splash/');
+                        install_path = path.join(game_path, game_data.unreal_root, "Content/Splash");
                     } else {
                         console.log('unknown install type assuming ~mods');
                         // unknown mod type ~ assume regular .pak replacement
@@ -577,6 +586,9 @@ export class Client {
             } else if (firstFileEntry.entryName.endsWith('.bk2')) {
                 console.log('install type seems like movie file, assuming Movies/');
                 install_path = path.join(game_path, game_data.unreal_root, "Content/Movies");
+            } else if (/splash/i.test(firstFileEntry.entryName) && firstFileEntry.entryName.endsWith('.bmp')) {
+                console.log('install type seems like image file, assuming Splash/');
+                install_path = path.join(game_path, game_data.unreal_root, "Content/Splash");
             } else {
                 console.log('unknown install type assuming ~mods');
                 // unknown mod type ~ assume regular .pak replacement
@@ -606,7 +618,7 @@ export class Client {
 
                 for (const entry of entries) {
                     // do backup if bk2 file
-                    if (entry.entryName.endsWith('.bk2')) {     
+                    if (entry.entryName.endsWith('.bk2') || entry.entryName.endsWith('.bmp')) {     
                         console.log("found movie file:", entry.entryName);
                         await this.backupFileForDelete(path.join(install_path, entry.entryName));
                     }
@@ -678,6 +690,9 @@ export class Client {
                     case "Movies/":
                         base_path = path.join(game_path, game_data.unreal_root, "Content");
                         break;
+                    case "Splash/":
+                        base_path = path.join(game_path, game_data.unreal_root, "Content");
+                        break;
                     case "Paks/":
                         base_path = path.join(game_path, game_data.unreal_root, "Content");
                         break;
@@ -700,7 +715,7 @@ export class Client {
                     used_entries.push(entry);
 
                     // do backup if bk2 file
-                    if (fileordir.endsWith('.bk2')) {     
+                    if (fileordir.endsWith('.bk2') || fileordir.endsWith('.bmp')) {     
                         console.log("restoring movie file:", fileordir);
                         await this.restoreBackupFile(fileordir);
                     }

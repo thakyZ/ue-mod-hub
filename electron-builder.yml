@@ -30,6 +30,8 @@ extraFiles:
     to: resources/vbs
   - from: resources/app-mods
     to: resources/app-mods
+  - from: resources/bat-files
+    to: .
 
 publish:
   releaseType: release
