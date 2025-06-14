@@ -110,11 +110,15 @@ export default function ModsPage() {
     const getInstalledMods = async (api_key, game_path) => {
         const config = await window.palhub('readJSON', game_path);
         if (!config || (!config.mods && !config.local_mods)) return [];
-        const mod_ids = Object.keys(config.mods);
+        const mod_ids = Object.keys(config.mods ?? {});
         const mods_from_nexus = await Promise.all(mod_ids.map(async mod_id => {
-            return await window.nexus(api_key, 'getModInfo', mod_id, slug);
+            const nexus_data = await window.nexus(api_key, 'getModInfo', mod_id, slug);
+            nexus_data.saved_config = config.mods[mod_id];
+            nexus_data.installed = true;
+            return nexus_data;
         }));
 
+        console.log('config.mods:', config.mods);
         if (!config.local_mods) return mods_from_nexus;
         const local_mods = Object.values(config.local_mods).filter(mod => mod.local);
         console.log('local_mods:', local_mods);
@@ -123,12 +127,23 @@ export default function ModsPage() {
 
     const getDownloadedMods = React.useCallback(async (api_key, cache_dir) => {
         console.log('cache_dir:', cache_dir, slug);
+        // const install_config = await window.palhub('readJSON', game_path);
         const config = await window.palhub('readJSON', cache_dir);
         const mod_ids = Object.keys(config[slug] ?? {});
         return await Promise.all(mod_ids.map(async mod_id => {
-            return await window.nexus(api_key, 'getModInfo', mod_id, slug);
+            const nexus_data = await window.nexus(api_key, 'getModInfo', mod_id, slug);
+            console.log('setting nexus_data:', config[slug][mod_id]);
+            const saved_keys = Object.keys(config[slug][mod_id]);
+            nexus_data.saved_config = {
+                file_id: saved_keys[0],
+                file_name: config[slug][mod_id][saved_keys[0]].zip,
+                mod_id: mod_id,
+            }
+            // nexus_data.saved_config = install_config.mods[mod_id];
+            // nexus_data.installed = nexus_data.saved_config ? true : false;
+            return nexus_data;
         }));
-    }, [cache_dir, commonAppData?.selectedGame?.id]);
+    }, [game_path, cache_dir, commonAppData?.selectedGame?.id]);
 
     // load initial settings from store
     React.useEffect(() => {
@@ -158,6 +173,8 @@ export default function ModsPage() {
                 }));
 
                 const nexusValidationFilter = (mod) => {
+                    // console.log('nexusValidationFilter:', mod);
+                    // return true;
                     if (!mod || !mod.status) return false;
                     return mod.status === 'published' && mod.available;
                 }
@@ -168,7 +185,10 @@ export default function ModsPage() {
                 });
 
                 const new_locals = new_mods.filter(mod => mod.local);
-                new_mods = new_mods.filter(nexusValidationFilter)
+                if (modlistID > 1) {
+                    new_mods = new_mods.filter(nexusValidationFilter)
+                }
+                console.log({new_mods})
 
                 if (![0, 1].includes(modlistID)) {
                     if (new_mods.length >= 8) new_mods = new_mods.slice(0, 8);
@@ -341,7 +361,7 @@ export default function ModsPage() {
                 />                
 
                 <div className="row mt-3">
-                    {mods && mods.map((mod, i) => <ModCardComponent key={i} mod={mod} onClick={onClickModCard} />)}
+                    {mods && mods.map((mod, i) => <ModCardComponent key={i} {...{mod, modlistID, refreshModList}} onClick={onClickModCard} />)}
                 </div>
                 {localMods.length > 0 && <div className="row mt-3">
                     <h4 className='text-start'>{t('/mods.manual-mods')}</h4>

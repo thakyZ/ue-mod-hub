@@ -24,8 +24,9 @@ const rpc = new DiscordRPC.Client({ transport: 'ipc' });
 
 const nexusBaseURL = 'https://www.nexusmods.com';
 const gameToAppModID = {
-    palworld: 2017,
-    ff7rebirth: 69,
+    "palworld": 2017,
+    "ff7rebirth": 69,
+    "stellar-blade": 206,
 }
 
 const UPDATE_FREQ = 30e3;//15e3;

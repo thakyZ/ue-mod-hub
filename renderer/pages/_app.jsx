@@ -28,7 +28,8 @@ export default function MainAppWrapper({ Component, pageProps }) {
         applog("error", info.componentStack);
     };
 
-    return <LocalizationProvider>
+    return (
+        <LocalizationProvider>
             <DeepLinkProvider>
                 <CommonAppDataProvider>
                     <DekAppLayoutWrapper>
@@ -39,4 +40,5 @@ export default function MainAppWrapper({ Component, pageProps }) {
                 </CommonAppDataProvider>
             </DeepLinkProvider>
         </LocalizationProvider>
+    )
 };

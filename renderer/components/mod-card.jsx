@@ -47,12 +47,54 @@ import * as CommonIcons from 'config/common-icons';
 import { SphereSpinner } from 'react-spinners-kit';
 import DOMPurify from 'dompurify';
 import Link from 'next/link';
+import useCommonChecks from '@hooks/useCommonChecks';
 
-export default function ModCardComponent({ mod, onClick=()=>{}, ad=false }) {
+export default function ModCardComponent({ mod, onClick=()=>{}, ad=false, refreshModList=()=>{}, modlistID=0}) {
     if (!mod) mod = DEFAULT_EXAMPLE_MOD_LISTING;
     
     const IconComponent = CommonIcons.star;
-    const realOnClick = () => onClick(mod);
+    const realOnClick = React.useCallback(() => {
+        if (mod.available) onClick(mod);
+    }, [onClick, mod]);
+
+    const { requiredModulesLoaded, commonAppData } = useCommonChecks();
+    const game_path = commonAppData?.selectedGame.path;
+    const cache_dir = commonAppData?.cache;
+
+    const onUninstallModFiles = React.useCallback(async() => {
+        if (!requiredModulesLoaded) return;
+        console.log('uninstalling mod:', mod);
+        try {
+            const result = await window.palhub('uninstallMod', game_path, mod);
+            console.log({result});
+            refreshModList();
+        } catch (error) {
+            console.error('error uninstalling mod:', error);
+        }
+    }, [mod, requiredModulesLoaded, game_path, refreshModList]);
+
+    const onUninstallModCache = React.useCallback(async() => {
+        if (!requiredModulesLoaded) return;
+        console.log('uninstalling from cache:', mod);
+        try {
+            await window.palhub('uninstallFilesFromCache', cache_dir, mod, mod.saved_config);
+            refreshModList();
+        } catch (error) {
+            console.error('error uninstalling from cache:', error);
+        }
+        // handleCancel();
+    }, [mod, requiredModulesLoaded, cache_dir, refreshModList]);
+
+    const onClickRemoveDeleteFiles = React.useCallback(async() => {
+        if (mod.available) {
+            alert('This mod is available, you cannot remove it.');
+            return; 
+        }
+        switch (modlistID) {
+            case 0: await onUninstallModFiles(); break;
+            case 1: await onUninstallModCache(); break;
+        }
+    }, [mod, onUninstallModFiles, modlistID]);
 
     if (mod.local) {
         return <Col xs={12} md={6} lg={4} xl={3} className='mb-2' onClick={realOnClick}>
@@ -66,8 +108,7 @@ export default function ModCardComponent({ mod, onClick=()=>{}, ad=false }) {
                             <IconComponent fill='currentColor' className='modicon'/>
                         </div>}
                     </Card.Title>
-    
-    
+
                     <div className='anal-cavity px-2'>
                         <p className='text-secondary mb-0 truncate font-bold'>{mod.file_name ?? 'n/a'}</p>
                         <small><small className='text-dark'>{mod.author ?? '??'}</small></small>
@@ -83,19 +124,23 @@ export default function ModCardComponent({ mod, onClick=()=>{}, ad=false }) {
             <Card.Body className='text-start p-0'>
                 <Card.Title className='p-1'>
                     <div className="ratio ratio-16x9">
-                        <Image src={mod.picture_url ?? mod.uploaded_users_profile_url} alt={mod.name} fluid thumbnail />
+                        <Image src={mod.picture_url ?? '/img/mod-unavailable.webp'} alt={mod.name} fluid thumbnail />
                     </div>
                     {ad && <div className='modcard'>
                         <IconComponent fill='currentColor' className='modicon'/>
                     </div>}
                 </Card.Title>
 
-
                 <div className='anal-cavity px-2'>
-                    <p className='text-secondary mb-0 truncate font-bold'>{mod.name ?? 'n/a'}</p>
+                    <p className='text-secondary mb-0 truncate font-bold'>{mod.name ?? mod.saved_config?.file_name ?? 'n/a'}</p>
                     <small><small><Link href={mod.uploaded_users_profile_url} target='_blank' className='hover-dark'>{mod.uploaded_by}</Link></small></small>
-                    <div className='text-white' dangerouslySetInnerHTML={{__html:DOMPurify.sanitize(mod.summary)}}></div>
+                    {mod.available && <div className='text-white' dangerouslySetInnerHTML={{__html:DOMPurify.sanitize(mod.summary)}}></div>}
+                    {!mod.available && <div className='text-center text-white'>
+                        <p className='m-0'>This mod is {mod.status}!</p>  
+                        <button className='btn btn-danger mt-2' onClick={onClickRemoveDeleteFiles}>Remove Mod</button>
+                    </div>}
                 </div>
+
             </Card.Body>
         </Card>
     </Col>    

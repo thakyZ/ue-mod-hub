@@ -2,7 +2,7 @@
 
 
 import React from 'react';
-import { ENVEntry, ENVEntryLabel } from '@components/modals/common';
+import { ENVEntry, ENVEntryLabel, ENVEntry_Input } from '@components/modals/common';
 
 import useCommonChecks from '@hooks/useCommonChecks';
 import useLocalization from '@hooks/useLocalization';
@@ -32,13 +32,27 @@ export default function GameConfiguration({tempGame, setTempGame, runModloaderTa
         setShow(false);
     }, []);
 
+    const onClickSelectGamePath = React.useCallback(async() => {
+        // select game path folder:
+        const result = await window.ipc.invoke("open-file-dialog", {
+            title: t('modals.game-config.root-game-folder', { game: tempGame ?? {name: ''} }),
+            // buttonLabel: t('/settings.inputs.game-path.select-button', { game: tempGame ?? {name: ''} }),
+            properties: ['openDirectory', 'createDirectory'],
+            defaultPath: tempGame?.path ?? knownGamePath,
+        })
+        console.log('Selected game path:', result);
+        if (result && result.filePaths.length > 0) {
+            handleGamePathChange('path', result.filePaths[0]);
+        }
+    }, [tempGame, knownGamePath, handleGamePathChange]);
+
     const can_use_ue4ss = tempGame?.map_data?.platforms?.[tempGame?.launch_type]?.modloader?.ue4ss !== undefined;
     console.log({can_use_ue4ss, tempGame});
 
     if (!requiredModulesLoaded) return null;
     return <React.Fragment>
 
-        {tempGame?.id && <div className='btn-group dek-choice w-100' role="group">
+        {tempGame?.id && <div className='btn-group dek-choice w-100 mb-3' role="group">
             <div className='btn btn-secondary px-3 w-50 disabled' disabled>
                 <strong>{install_types[installed_type] ?? '???'}</strong>
             </div>
@@ -47,13 +61,32 @@ export default function GameConfiguration({tempGame, setTempGame, runModloaderTa
             </div>
         </div>}
 
-        <ENVEntry 
+        {/* <ENVEntry 
             disabled={tempGame?.id}
             value={tempGame?.path ?? knownGamePath}
             updateSetting={handleGamePathChange}
             name={t('/settings.inputs.game-path.name', { game: tempGame ?? {name: ''}})}
             tooltip={t('/settings.inputs.game-path.desc', { game: tempGame ?? {name: 'game'} })}
+        /> */}
+        <ENVEntryLabel
+            name={t('/settings.inputs.game-path.name', { game: tempGame ?? {name: ''}})}
+            tooltip={t('/settings.inputs.game-path.desc', { game: tempGame ?? {name: 'game'} })}
         />
+        <div className='d-flex w-100' role="group">
+            <ENVEntry_Input 
+                disabled={tempGame?.id}
+                value={tempGame?.path ?? knownGamePath}
+                updateSetting={handleGamePathChange}
+                name={t('/settings.inputs.game-path.name', { game: tempGame ?? {name: ''}})}
+                tooltip={t('/settings.inputs.game-path.desc', { game: tempGame ?? {name: 'game'} })}
+                type='text'
+                noLabel={true}
+                onClick={onClickSelectGamePath}
+            />
+            {!tempGame?.id && <button className='btn btn-secondary' onClick={onClickSelectGamePath}>
+                ...
+            </button>}
+        </div>
 
         {tempGame?.id && <div className='row'>
             <div className='col'>

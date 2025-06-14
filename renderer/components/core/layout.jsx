@@ -43,7 +43,7 @@ export default function DekAppLayoutWrapper({ children }) {
     const [deepLink, linkChanged, consumeDeepLink] = useDeepLinkListener();
     const { requiredModulesLoaded, commonAppData } = useCommonChecks();
     const [deepLinkData, setDeepLinkData] = useState(null);
-    const initialGame = (commonAppData?.selectedGame?.id ?? 'palworld').replace('-demo', '');
+    const initialGame = (commonAppData?.selectedGame?.id ?? 'none').replace('-demo', '');
     const [theme_id, setThemeID, bg_id, setBgID, bg_opac, setBgOpac] = useThemeSystem(initialGame);
     const [showNavbarModal, setShowNavbarModal] = useState(false);
     const [showNxmModal, setShowNxmModal] = useState(false);
@@ -58,6 +58,7 @@ export default function DekAppLayoutWrapper({ children }) {
     const nonav_page = can_show_navbar ? '' : 'game-bg-full';
     // const loadDelay = can_show_navbar ? 10000 : 0;
     const { ready, t } = useLocalization(null);//, loadDelay);
+    const isActuallyReady = ready && commonAppData?.selectedGame?.id;
 
     const modals = {
         // onClickSettings: () => setShowSettingsModal(true),
@@ -89,6 +90,7 @@ export default function DekAppLayoutWrapper({ children }) {
             setShowNxmModal(true);
         }
     }, [linkChanged]);
+
 
 
     return <React.Fragment>
@@ -125,7 +127,7 @@ export default function DekAppLayoutWrapper({ children }) {
             </React.Fragment>}
             {/* A basic loading page for when app/localization is finished loading */}
             {/* deap-dragbar to still allow for the window to be moved while loading */}
-            {!ready && <div className={`main-body h-full game-bg-full ${bg} deap-dragbar`}>
+            {!ready && <div className={`main-body h-full game-bg-full deap-dragbar`}>
                 <div className='h-100 d-flex justify-content-center align-items-center'>
                     <div className='d-grid text-center text-secondary'>
                         <PongSpinner color='currentColor' size={256} />

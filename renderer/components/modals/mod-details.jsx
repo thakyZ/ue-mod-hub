@@ -66,7 +66,9 @@ export default function ModDetailsModal({show,setShow,mod,refreshModList}) {
             try {
                 const api_key = await window.uStore.get('api_key');
                 const game_slug = commonAppData?.selectedGame?.map_data.providers.nexus;
-                const {files, file_updates} = await window.nexus(api_key, 'getModFiles', mod.mod_id, game_slug);
+                const result = await window.nexus(api_key, 'getModFiles', mod.mod_id, game_slug);
+                console.log('updateModFiles result:', result);
+                const {files, file_updates} = result;
                 files.sort((a,b) => b.uploaded_timestamp - a.uploaded_timestamp);
                 console.log({files, file_updates});
                 // const links = await window.nexus(api_key, 'getDownloadURLs', mod.mod_id);
@@ -123,6 +125,9 @@ export default function ModDetailsModal({show,setShow,mod,refreshModList}) {
                             if (!showArchive && file && file.category_name === 'ARCHIVED') return null;
                             return <ModFileCard key={i} mod={mod} file={file} />
                         })}
+                    </Carousel.Item>
+                    <Carousel.Item className="container-fluid">
+                        <BBCodeRenderer bbcodeText={mod.description} />
                     </Carousel.Item>
                 </Carousel>
                 <div className="text-center mb-1">

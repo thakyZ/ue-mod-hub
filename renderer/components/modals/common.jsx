@@ -114,7 +114,7 @@ export function ENVEntry_Input({name, value, onClick, updateSetting, defaults, e
 
     // console.log(name, envdatas[name])
 
-    return <div className={noLabel ? '' : 'py-2'}>
+    return <div className={noLabel ? 'w-100' : 'w-100 py-2'}>
         {!noLabel && <ENVEntryLabel {...{name,envdatas,tooltip}} />}
         <input 
             type={type}
@@ -139,7 +139,7 @@ export function ENVEntry_Input({name, value, onClick, updateSetting, defaults, e
 export function ENVEntry_Bool({name, value, onClick, updateSetting, defaults, envdatas, tooltip, noLabel, labels}) {
     // const [knownValue, setKnownValue] = useState(value);
     // updateSetting(name)
-    return <div className={noLabel ? '' : 'py-2'}>
+    return <div className={noLabel ? 'w-100' : 'w-100 py-2'}>
         {!noLabel && <ENVEntryLabel {...{name,envdatas,tooltip}} />}
         <DekSwitch
             className='w-100'
@@ -157,7 +157,7 @@ export function ENVEntry_Bool({name, value, onClick, updateSetting, defaults, en
 export function ENVEntry_Range({name, value, onClick, updateSetting, defaults, envdatas, tooltip, noLabel, disabled, limits}) {
     // const [knownValue, setKnownValue] = useState(value);
     // updateSetting(name)
-    return <div className={noLabel ? '' : 'py-2'}>
+    return <div className={noLabel ? 'w-100' : 'w-100 py-2'}>
         {!noLabel && <ENVEntryLabel {...{name: `${name}: ${value}`,envdatas,tooltip}} />}
         <DekSlider
             // label={name}

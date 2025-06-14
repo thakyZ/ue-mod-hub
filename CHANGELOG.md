@@ -13,12 +13,22 @@
 - determine if any pak files edit the same asset? 
 - properly setup github actions 
 - sort options for mods
-- support for splash screen mods
+
+
+### v0.10.10
+- Added button to select game folder path on Game & Modloader settings page, when adding new game to manage. 
+- Bugfix: theme customization options re-enabled after bug caused them to not display. 
+- Added "Get The Mod Hub App" button for discord rpc when modding stellar blade.
+- Altered cache to retain basic data for mods hidden/removed after install. 
+- Changed hidden mods to be shown when installed/downloaded. 
+- Added button to uninstall/delete active hidden mods.
+- Small positioning and layout improvements/fixes
 
 
 ### v0.10.3
 - Added ErrorWrapper component, sourcemaps, and button to open browser console window for easier live debugging the client side error issue. 
 - Small change to useActiveGame hook to hopefully solve some client side error issues. 
+
 
 ### v0.9.98
 - Added `run-debug.bat` file + `UE Mod Hub Debug.txt` to assist in debugging live version

@@ -1,4 +1,4 @@
-import { Component } from "react";
+import react, { Component, cloneElement, Children } from "react";
 import useAppLogger from '@hooks/useAppLogger';
 
 export class ErrorWrapper extends Component {
@@ -37,6 +37,12 @@ export class ErrorWrapper extends Component {
                 </button>
             </div>
         }
-        return this.props.children;
+        return <react.Fragment>
+            {Children.map(this.props.children, (child) => cloneElement(child, { 
+                ThemeController: this.props.ThemeController,
+                modals: this.props.modals, 
+            }))}
+        </react.Fragment>
+        // return this.props.children;
     }
 }

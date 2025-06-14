@@ -204,6 +204,7 @@
             "head": "Game & Modloader Settings",
             "tabs": ["Game Setup", "UE4SS Config"],
             "game-path": "Game Installation Path",
+            "root-game-folder": "Select Desired Game's Root Folder (folder where the game is installed)",
             "game-path-desc": "The path to your local {{game.name}} installation.",
             "ue4ss-path": "UE4SS Installation Path",
             "ue4ss-path-desc": "The path to your UE4SS installation."
@@ -424,6 +425,7 @@
             "check-ue4ss-update": "Check For UE4SS Update",
             "uninstall-ue4ss": "Uninstall UE4SS",
             "download-ue4ss": "Click here to download & install UE4SS",
+            "select-game-path": "Select Game Path",
             "unmanage-game": "Unmanage Game",
             "play-game": "Play Game",
             "add-mods": "Add Mods"

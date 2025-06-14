@@ -940,6 +940,11 @@ export class Client {
             if (!config[gameID][mod.mod_id][file.file_id]) return [];
             config[gameID][mod.mod_id][file.file_id] = null;
             delete config[gameID][mod.mod_id][file.file_id];
+            if (Object.keys(config[gameID][mod.mod_id]).length === 0) {
+                entries = Object.values(config[gameID][mod.mod_id]).map((entry) => entry.zip);
+                config[gameID][mod.mod_id] = null;
+                delete config[gameID][mod.mod_id];
+            }
         } else {
             entries = Object.values(config[mod.mod_id]).map((entry) => entry.zip);
             config[gameID][mod.mod_id] = null;
