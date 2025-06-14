@@ -54,7 +54,7 @@ export default function ModCardComponent({ mod, onClick=()=>{}, ad=false, refres
     
     const IconComponent = CommonIcons.star;
     const realOnClick = React.useCallback(() => {
-        if (mod.available) onClick(mod);
+        if (mod.available || mod.local) onClick(mod);
     }, [onClick, mod]);
 
     const { requiredModulesLoaded, commonAppData } = useCommonChecks();

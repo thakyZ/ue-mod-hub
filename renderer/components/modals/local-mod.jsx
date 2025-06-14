@@ -286,6 +286,8 @@ export default function AddLocalModModal({show,setShow, refreshModList, initialM
                             <dekItem text={`${commonAppData?.selectedGame?.unreal_root}/Content/Paks`}/>
                             <dekItem text={`${commonAppData?.selectedGame?.unreal_root}/Content/Paks/LogicMods`}/>
                             <dekItem text={`${commonAppData?.selectedGame?.unreal_root}/Content/Paks/~mods`}/>
+                            <dekItem text={`${commonAppData?.selectedGame?.unreal_root}/Content/Movies`}/>
+                            <dekItem text={`${commonAppData?.selectedGame?.unreal_root}/Content/Splash`}/>
                         </DekSelect>
                     </div>
                 </div>

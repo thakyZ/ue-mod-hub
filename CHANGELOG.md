@@ -15,6 +15,11 @@
 - sort options for mods
 
 
+### v0.10.12
+- Bugfix: manually installed mods will again display popup window to uninstall. 
+- Added options for Content/Movies and Content/Splash paths for manually install mods.
+
+
 ### v0.10.10
 - Added button to select game folder path on Game & Modloader settings page, when adding new game to manage. 
 - Bugfix: theme customization options re-enabled after bug caused them to not display. 
