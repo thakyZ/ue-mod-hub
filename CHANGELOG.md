@@ -15,7 +15,7 @@
 - sort options for mods
 
 
-### Next Release
+### v0.10.13
 - Bugfix: for issue causing downloaded mods to not be displayed properly. 
 
 
