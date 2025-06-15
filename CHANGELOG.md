@@ -15,6 +15,10 @@
 - sort options for mods
 
 
+### Next Release
+- Bugfix: for issue causing downloaded mods to not be displayed properly. 
+
+
 ### v0.10.12
 - Bugfix: manually installed mods will again display popup window to uninstall. 
 - Added options for Content/Movies and Content/Splash paths for manually install mods.

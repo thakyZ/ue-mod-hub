@@ -135,7 +135,7 @@ export default function ModCardComponent({ mod, onClick=()=>{}, ad=false, refres
                     <p className='text-secondary mb-0 truncate font-bold'>{mod.name ?? mod.saved_config?.file_name ?? 'n/a'}</p>
                     <small><small><Link href={mod.uploaded_users_profile_url} target='_blank' className='hover-dark'>{mod.uploaded_by}</Link></small></small>
                     {mod.available && <div className='text-white' dangerouslySetInnerHTML={{__html:DOMPurify.sanitize(mod.summary)}}></div>}
-                    {!mod.available && <div className='text-center text-white'>
+                    {!mod.available && mod.saved_config && <div className='text-center text-white'>
                         <p className='m-0'>This mod is {mod.status}!</p>  
                         <button className='btn btn-danger mt-2' onClick={onClickRemoveDeleteFiles}>Remove Mod</button>
                     </div>}

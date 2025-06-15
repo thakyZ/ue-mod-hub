@@ -134,7 +134,7 @@ export default function ModsPage() {
             const nexus_data = await window.nexus(api_key, 'getModInfo', mod_id, slug);
             console.log('setting nexus_data:', config[slug][mod_id]);
             const saved_keys = Object.keys(config[slug][mod_id]);
-            nexus_data.saved_config = {
+            if (saved_keys.length) nexus_data.saved_config = {
                 file_id: saved_keys[0],
                 file_name: config[slug][mod_id][saved_keys[0]].zip,
                 mod_id: mod_id,
