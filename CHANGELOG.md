@@ -15,6 +15,11 @@
 - sort options for mods
 
 
+### v0.10.22
+- Bugfix for certain bbcode from nexus causing render errors. 
+- Added suggested mods for stellar blade
+
+
 ### v0.10.13
 - Bugfix: for issue causing downloaded mods to not be displayed properly. 
 

@@ -70,6 +70,7 @@ function determineAdvertizedMods(slug) {
     switch (slug) {
         case 'palworld': return [577, 703, 1204, 146, 489];//1650, 487, 577, 489]//, 1204];//, 1314, 1650, 1640];
         case 'hogwarts-legacy': return [1260, 1261, 1275, 1179];
+        case 'stellar-blade': return [340, 488, 489, 531, 546, 630];
     }
     return [];
 }
@@ -280,12 +281,17 @@ export default function ModsPage() {
                             {/* create carousel with each ad as the items */}
                             <Carousel interval={6900} className='w-100' indicators={true} style={{height: 234}}>
                                 {ads.map((mod, i) => {
-                                    return <Carousel.Item key={i} className=''>
-                                        <div className='container-fluid'>
-                                            <div className='row mx-auto bg-dark cursor-pointer radius6' style={{maxWidth: 800}} onClick={()=>onClickModCard(mod)}>
+                                    return <Carousel.Item key={i} className='h-100'>
+                                        <div className='container-fluid h-100'>
+                                            <div className='row mx-auto bg-dark cursor-pointer radius6 h-100' style={{maxWidth: 800}} onClick={()=>onClickModCard(mod)}>
                                                 <div className='col-12 col-lg-6 ps-lg-0 text-center'>
-                                                    <div className='position-relative'>
-                                                        <Image src={mod.picture_url} alt={mod.name} className='bg-transparent my-2' fluid style={{maxHeight: banner_height-56}}/>
+                                                    <div className='position-relative h-100'>
+                                                        {/* <div className='d-flex justify-content-center align-items-center'> */}
+                                                            <Image src={mod.picture_url} alt={mod.name} fluid 
+                                                                className='bg-transparent position-absolute top-50 start-50 ps-3' 
+                                                                style={{ maxHeight: banner_height-56, transform: 'translate(-50%, -50%)' }}
+                                                            />
+                                                        {/* </div> */}
                                                         {/* <div className='d-lg-none py-3 text-center w-100 position-absolute top-0'>
                                                             <h2 className='text-white bg-dark'>{mod.name}</h2>
                                                         </div> */}

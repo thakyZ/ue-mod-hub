@@ -1,6 +1,6 @@
 {
     "private": true,
-    "version": "0.10.13",
+    "version": "0.10.22",
     "name": "dekita-ue-mod-hub",
     "productName": "UE Mod Hub",
     "description": "UE Mod Hub written by DekitaRPG",
@@ -29,7 +29,7 @@
         "@bbob/react": "^4.1.1",
         "@nexusmods/nexus-api": "^1.1.5",
         "adm-zip": "^0.5.16",
-        "bbcode-to-react": "^0.2.9",
+        "bbcode-to-react": "TanninOne/bbcode-to-react",
         "bent": "^7.3.12",
         "blurhash": "^2.0.5",
         "bootstrap": "^5.3.3",
@@ -80,7 +80,7 @@
         "bbcode-to-react/react": "18.3.1"
     },
     "release": {
-        "date": "6/15/2025",
-        "time": "8:57:08 AM"
+        "date": "7/4/2025",
+        "time": "10:30:21 AM"
     }
 }
