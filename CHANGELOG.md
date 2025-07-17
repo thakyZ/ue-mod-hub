@@ -101,10 +101,10 @@
 
 ### v0.8.68
 - Fixed issue of zip archives with logic mod pak file installing to ~mods folder rather than LogicMods. 
-(caused by archives that doesnt specify any root folder and contain only pak/utac/ucos/other files)
+(caused by archives that doesn't specify any root folder and contain only pak/utac/ucos/other files)
 - Fixed issue of 'install ue4ss' not displaying when setting up managed game that supports it. 
 - Fixed issue of games that have been moved directory since added to app causing crash/error.
-(any game that doesnt seem validis now automatically removed from the applications data cache)
+(any game that doesn't seem validis now automatically removed from the applications data cache)
 - Fixed issue of cache being reset each app boot. (only affected latest few versions of app)
 - Fixed issue of user nexus avatar not immediately updating after entering api key.
 - Fixed issue of 'Discord RPC' not updating status. 
@@ -133,7 +133,7 @@
 - Improved various text elements, descriptions, faq's, etc. 
 - Altered main body scrollbar to always show for element position consistency.
 - Fixed issue with certain 7z archive structures (causing mods to install to wrong location)
-- Fixed issue with all archive structures (where folders arent included in archive as entries)
+- Fixed issue with all archive structures (where folders aren't included in archive as entries)
 - Fixed issue with ue4ss installation error on palworld servers (incorrect patch file path)
 - Dramatically reduced overall installer & application size (~25%). <3
   - unpacked app size change: 434MB -> 326MB (24.88% reduction)

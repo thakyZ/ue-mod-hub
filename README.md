@@ -55,7 +55,7 @@ List your Palworld server in UE Mod Hub using the `UE Mod Hub (Server Listing Mo
 ### Supported Games
 - Palworld
 - Palworld Server
-- Final Fantasy VII Remake Integrade
+- Final Fantasy VII Remake Intergrade
 - Final Fantasy VII Rebirth
 - Hogwarts Legacy
 - Black Myth Wukong

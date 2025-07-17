@@ -14,7 +14,7 @@ While installing simply follow the on-screen instructions to get the app running
 
 
 ### Why Does This Happen?! 
-Because a few years ago windows decided they wanted $250/yr for a windows code signing license!! I'm just a small developer who, unfortunately, doesnt have that kind of spare cash. 
+Because a few years ago windows decided they wanted $250/yr for a windows code signing license!! I'm just a small developer who, unfortunately, doesn't have that kind of spare cash. 
 
 <hr class="mt-1">
 
