@@ -1,126 +1,208 @@
 // Description: This script compresses all PNG images in a specified folder and its subfolders.
 // It uses the sharp library to compress the images and save them in the same folder structure.
 // The script can be run with Node.js and requires the sharp library to be installed.
-// 
+//
 // The main purpose of this script is to reduce the size of PNG images in a project.
 // Author: dekitarpg.@gmail.com (GPT assist)
 //
-const sharp = require("sharp");
-const path = require("path");
-const fs = require("fs");
+import { mkdir, readdir } from 'node:fs/promises';
+import path from 'node:path';
 
-// Usage: Specify input and output folders
-const inputFolder = path.resolve("resources/uncompressed-public-images"); // input folder path
-const outputFolder = path.resolve("renderer/public/img"); // converted file output folder path
-const conversionType = "webp"; // "png" or "webp"
+import sharp from 'sharp';
+import type { Compiler } from 'webpack';
 
-// Function to recursively find all PNG files in a folder and its subfolders
-async function findPngFiles(dir) {
-    const entries = await fs.promises.readdir(dir, { withFileTypes: true });
-    const pngFiles = [];
-    const imageTypes = [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".webp"];
+export default class CompressPublicImages {
+    /**
+     * input folder path
+     */
+    private inputFolder: string;
+    /**
+     * converted file output folder path
+     */
+    private outputFolder: string;
+    /**
+     * "png" or "webp"
+     */
+    private conversionType: 'webp' | 'png';
+    
+    constructor() {
+        // Usage: Specify input and output folders
+        this.inputFolder = path.resolve('resources/uncompressed-public-images');
+        this.outputFolder = path.resolve('renderer/public/img');
+        this.conversionType = 'webp';
+    }
 
-    for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
+    /**
+     * Applies the class to the webpack plugin
+     */
+    apply(compiler: Compiler): void {
+        compiler.hooks.beforeCompile.tapPromise(
+            'CompressPublicImages',
+            async (_compilation): Promise<void> => {
+                switch (this.conversionType) {
+                    case 'png':
+                        await this.compressAllPngs(this.inputFolder, this.outputFolder);
+                        break;
+                    case 'webp':
+                        await this.compressAllPngsToWebP(this.inputFolder, this.outputFolder);
+                        break;
+                    default:
+                        console.error("Invalid conversion type. Please specify 'png' or 'webp'.");
+                }
+            }
+        );
+    }
 
-        if (entry.isDirectory()) {
-            const subfolderPngs = await findPngFiles(fullPath);
-            pngFiles.push(...subfolderPngs);
-        } else if (entry.isFile() && imageTypes.includes(path.extname(entry.name).toLowerCase())) {
-            pngFiles.push(fullPath);
+    /**
+     * A typeguarded version of `instanceof Error` for NodeJS.
+     * @author Joseph JDBar Barron
+     * @link https://dev.to/jdbar
+     * @see https://dev.to/jdbar/the-problem-with-handling-node-js-errors-in-typescript-and-the-workaround-m64
+     * @template {new (message?: string, options?: ErrorOptions) => Error} T
+     * @param {Error} value
+     * @param {T} errorType
+     * @returns {value is InstanceType<T> & NodeJS.ErrnoException}
+     */
+    static instanceOfNodeError<T extends new (message?: string, options?: ErrorOptions) => Error>(value: Error, errorType: T): value is InstanceType<T> & NodeJS.ErrnoException {
+        return value instanceof errorType;
+    }
+
+    /**
+     * Function to recursively find all PNG files in a folder and its subfolders
+     * @param {string} dir
+     * @returns {Promise<string[]>}
+     */
+    async findPngFiles(dir: string): Promise<string[]> {
+        /** @type {import('fs').Dirent[]} */
+        const entries: import('fs').Dirent[] = await readdir(dir, { withFileTypes: true });
+        /** @type {string[]} */
+        const pngFiles: string[] = [];
+        /** @type {Set<string>} */
+        const imageTypes: Set<string> = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp']);
+
+        for (const entry of entries) {
+            /** @type {string} */
+            const fullPath: string = path.join(dir, entry.name);
+
+            if (entry.isDirectory()) {
+                /** @type {string[]} */
+                const subfolderPngs: string[] = await this.findPngFiles(fullPath);
+                pngFiles.push(...subfolderPngs);
+            } else if (entry.isFile() && imageTypes.has(path.extname(entry.name).toLowerCase())) {
+                pngFiles.push(fullPath);
+            }
+        }
+
+        return pngFiles;
+    }
+
+    /**
+     * Function to compress a PNG file
+     * @param {string} filePath
+     * @param {string} outputPath
+     * @returns {Promise<void>}
+     */
+    async compressPng(filePath: string, outputPath: string): Promise<void> {
+        try {
+            await sharp(filePath).png({ quality: 80, compressionLevel: 9 }).toFile(outputPath);
+            console.log(`Compressed: ${filePath}`);
+        } catch (error) {
+            console.error(`Failed to compress ${filePath}:`, error);
         }
     }
 
-    return pngFiles;
-}
-
-// Function to compress a PNG file
-async function compressPng(filePath, outputPath) {
-    try {
-        await sharp(filePath)
-            .png({ quality: 80, compressionLevel: 9 })
-            .toFile(outputPath);
-        console.log(`Compressed: ${filePath}`);
-    } catch (err) {
-        console.error(`Failed to compress ${filePath}:`, err);
-    }
-}
-
-// Function to compress and convert PNG to WebP
-async function convertToWebP(filePath, outputPath) {
-    try {
-        // regexp checks for all image types
-        const webpPath = outputPath.replace(/\.(png|jpg|jpeg|gif|bmp|tiff|webp)$/i, ".webp");
-        await sharp(filePath)
-            .webp({ quality: 80, lossless: false }) // Adjust quality for lossy or use lossless: true
-            .toFile(webpPath);
-        console.log(`Converted: ${filePath} -> ${webpPath}`);
-    } catch (err) {
-        console.error(`Failed to convert ${filePath}:`, err);
-    }
-}
-
-// Ensure directory existence (custom implementation)
-async function ensureDir(dir) {
-    try {
-        await fs.promises.mkdir(dir, { recursive: true });
-    } catch (err) {
-        if (err.code !== "EEXIST") throw err; // Ignore error if the directory exists
-    }
-}
-
-// Main functions
-async function compressAllPngs(inputFolder, outputFolder) {
-    try {
-        // Find all PNG files
-        const pngFiles = await findPngFiles(inputFolder);
-
-        // Compress each PNG
-        for (const filePath of pngFiles) {
-            const relativePath = path.relative(inputFolder, filePath);
-            const outputPath = path.join(outputFolder, relativePath);
-
-            // Ensure the output subfolder exists
-            await ensureDir(path.dirname(outputPath));
-
-            await compressPng(filePath, outputPath);
+    /**
+     * Function to compress and convert PNG to WebP
+     * @param {string} filePath
+     * @param {string} outputPath
+     * @returns {Promise<void>}
+     */
+    async convertToWebP(filePath: string, outputPath: string): Promise<void> {
+        try {
+            // regexp checks for all image types
+            const webpPath = outputPath.replace(/\.(png|jpg|jpeg|gif|bmp|tiff|webp)$/i, '.webp');
+            await sharp(filePath)
+                .webp({ quality: 80, lossless: false }) // Adjust quality for lossy or use lossless: true
+                .toFile(webpPath);
+            console.log(`Converted: ${filePath} -> ${webpPath}`);
+        } catch (error) {
+            console.error(`Failed to convert ${filePath}:`, error);
         }
-
-        console.log("Compression complete!");
-    } catch (err) {
-        console.error("Error:", err);
     }
-}
 
-async function compressAllPngsToWebP(inputFolder, outputFolder) {
-    try {
-        // Find all PNG files
-        const pngFiles = await findPngFiles(inputFolder);
-    
-        // Convert each PNG to WebP
-        for (const filePath of pngFiles) {
-            const relativePath = path.relative(inputFolder, filePath);
-            const outputPath = path.join(outputFolder, relativePath);
-    
-            // Ensure the output subfolder exists
-            await ensureDir(path.dirname(outputPath));
-    
-            await convertToWebP(filePath, outputPath);
+    /**
+     * Ensure directory existence (custom implementation)
+     * @param {string} dir
+     * @returns {Promise<void>}
+     */
+    async ensureDir(dir: string): Promise<void> {
+        try {
+            await mkdir(dir, { recursive: true });
+        } catch (error) {
+            if (error instanceof Error && CompressPublicImages.instanceOfNodeError(error, TypeError) && error.code !== 'EEXIST') // Ignore error if the directory exists
+                throw error;
         }
-    
-        console.log("Conversion to WebP complete!");
-    } catch (err) {
-        console.error("Error:", err);
     }
-}
 
-switch (conversionType) {
-    case "png":
-        compressAllPngs(inputFolder, outputFolder);
-        break;
-    case "webp":
-        compressAllPngsToWebP(inputFolder, outputFolder);
-        break;
-    default:
-        console.error("Invalid conversion type. Please specify 'png' or 'webp'.");
+    /**
+     * Main functions
+     * @param {string} inputFolder
+     * @param {string} outputFolder
+     * @returns {Promise<void>}
+     */
+    async compressAllPngs(inputFolder: string, outputFolder: string): Promise<void> {
+        try {
+            // Find all PNG files
+            /** @type {string[]} */
+            const pngFiles: string[] = await this.findPngFiles(inputFolder);
+
+            // Compress each PNG
+            for (const filePath of pngFiles) {
+                /** @type {string} */
+                const relativePath: string = path.relative(inputFolder, filePath);
+                /** @type {string} */
+                const outputPath: string = path.join(outputFolder, relativePath);
+
+                // Ensure the output subfolder exists
+                await this.ensureDir(path.dirname(outputPath));
+
+                await this.compressPng(filePath, outputPath);
+            }
+
+            console.log('Compression complete!');
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    /**
+     * Main functions
+     * @param {string} inputFolder
+     * @param {string} outputFolder
+     * @returns {Promise<void>}
+     */
+    async compressAllPngsToWebP(inputFolder: string, outputFolder: string): Promise<void> {
+        try {
+            // Find all PNG files
+            /** @type {string[]} */
+            const pngFiles: string[] = await this.findPngFiles(inputFolder);
+
+            // Convert each PNG to WebP
+            for (const filePath of pngFiles) {
+                /** @type {string} */
+                const relativePath: string = path.relative(inputFolder, filePath);
+                /** @type {string} */
+                const outputPath: string = path.join(outputFolder, relativePath);
+
+                // Ensure the output subfolder exists
+                await this.ensureDir(path.dirname(outputPath));
+
+                await this.convertToWebP(filePath, outputPath);
+            }
+
+            console.log('Conversion to WebP complete!');
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
 }
