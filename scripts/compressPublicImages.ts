@@ -4,41 +4,101 @@
 //
 // The main purpose of this script is to reduce the size of PNG images in a project.
 // Author: dekitarpg.@gmail.com (GPT assist)
+// Modified by: thakyZ (950594+thakyZ@users.noreply.github.com) <https://github.com/thakyZ> (No assist)
 //
+import type { Dirent } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { mkdir, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
 import sharp from 'sharp';
-import type { Compiler } from 'webpack';
+import type { Compiler, Compilation } from 'webpack';
 
+/**
+ * Mirror reference of the webpack class {@link WebpackLogger}
+ */
+type WebpackLogger = ReturnType<Compiler['getInfrastructureLogger']>;
+
+/**
+ * Mirror reference of the webpack class {@link CompilationParams}
+ */
+type CompilationParams = Compilation['params'];
+
+export declare interface Options {
+    /**
+     * Force the re-compression of images.
+     */
+    force?: boolean;
+
+    /**
+     * Input folder path
+     */
+    inputFolder?: string;
+
+    /**
+     * Converted file output folder path
+     */
+    outputFolder?: string;
+
+    /**
+     * The type of conversion.
+     * Must be "png" or "webp"
+     */
+    conversionType?: 'webp' | 'png';
+}
+
+/**
+ * A webpack plugin to compress images into webp format.
+ */
 export default class CompressPublicImages {
     /**
-     * input folder path
+     * Force the re-compression of images.
+     */
+    private force: boolean;
+
+    /**
+     * Input folder path
      */
     private inputFolder: string;
+
     /**
-     * converted file output folder path
+     * Converted file output folder path
      */
     private outputFolder: string;
+
     /**
-     * "png" or "webp"
+     * The type of conversion.
+     * Must be "png" or "webp"
      */
     private conversionType: 'webp' | 'png';
+
+    /**
+     * Logger of the webpack plugin.
+     */
+    private logger: WebpackLogger | typeof console;
     
-    constructor() {
-        // Usage: Specify input and output folders
-        this.inputFolder = path.resolve('resources/uncompressed-public-images');
-        this.outputFolder = path.resolve('renderer/public/img');
-        this.conversionType = 'webp';
+    /**
+     * Creates a new instance of the {@link CompressPublicImages} class
+     * @param {Options} options Options for the plugin.
+     */
+    constructor(options: Options) {
+        this.logger = console;
+        this.force = options.force ?? false;
+        this.inputFolder = options.inputFolder ?? path.resolve('resources/uncompressed-public-images');
+        this.outputFolder = options.outputFolder ?? path.resolve('renderer/public/img');
+        this.conversionType = options.conversionType ?? 'webp';
     }
 
     /**
      * Applies the class to the webpack plugin
+     * @param {Compiler} compiler
+     * @returns {void}
      */
     apply(compiler: Compiler): void {
+        this.logger = compiler.getInfrastructureLogger(CompressPublicImages.name);
         compiler.hooks.beforeCompile.tapPromise(
             'CompressPublicImages',
-            async (_compilation): Promise<void> => {
+            async (_compilation: CompilationParams): Promise<void> => {
                 switch (this.conversionType) {
                     case 'png':
                         await this.compressAllPngs(this.inputFolder, this.outputFolder);
@@ -47,7 +107,7 @@ export default class CompressPublicImages {
                         await this.compressAllPngsToWebP(this.inputFolder, this.outputFolder);
                         break;
                     default:
-                        console.error("Invalid conversion type. Please specify 'png' or 'webp'.");
+                        this.logger.error("Invalid conversion type. Please specify 'png' or 'webp'.");
                 }
             }
         );
@@ -62,8 +122,11 @@ export default class CompressPublicImages {
      * @param {Error} value
      * @param {T} errorType
      * @returns {value is InstanceType<T> & NodeJS.ErrnoException}
+     * @static
      */
-    static instanceOfNodeError<T extends new (message?: string, options?: ErrorOptions) => Error>(value: Error, errorType: T): value is InstanceType<T> & NodeJS.ErrnoException {
+    static instanceOfNodeError<
+        T extends new (message?: string, options?: ErrorOptions) => Error
+    >(value: Error, errorType: T): value is InstanceType<T> & NodeJS.ErrnoException {
         return value instanceof errorType;
     }
 
@@ -71,17 +134,14 @@ export default class CompressPublicImages {
      * Function to recursively find all PNG files in a folder and its subfolders
      * @param {string} dir
      * @returns {Promise<string[]>}
+     * @async
      */
     async findPngFiles(dir: string): Promise<string[]> {
-        /** @type {import('fs').Dirent[]} */
-        const entries: import('fs').Dirent[] = await readdir(dir, { withFileTypes: true });
-        /** @type {string[]} */
+        const entries: Dirent[] = await readdir(dir, { withFileTypes: true });
         const pngFiles: string[] = [];
-        /** @type {Set<string>} */
         const imageTypes: Set<string> = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp']);
 
         for (const entry of entries) {
-            /** @type {string} */
             const fullPath: string = path.join(dir, entry.name);
 
             if (entry.isDirectory()) {
@@ -101,13 +161,14 @@ export default class CompressPublicImages {
      * @param {string} filePath
      * @param {string} outputPath
      * @returns {Promise<void>}
+     * @async
      */
     async compressPng(filePath: string, outputPath: string): Promise<void> {
         try {
             await sharp(filePath).png({ quality: 80, compressionLevel: 9 }).toFile(outputPath);
-            console.log(`Compressed: ${filePath}`);
+            this.logger.log(`Compressed: ${filePath}`);
         } catch (error) {
-            console.error(`Failed to compress ${filePath}:`, error);
+            this.logger.error(`Failed to compress ${filePath}:`, error);
         }
     }
 
@@ -116,17 +177,19 @@ export default class CompressPublicImages {
      * @param {string} filePath
      * @param {string} outputPath
      * @returns {Promise<void>}
+     * @async
      */
     async convertToWebP(filePath: string, outputPath: string): Promise<void> {
         try {
             // regexp checks for all image types
             const webpPath = outputPath.replace(/\.(png|jpg|jpeg|gif|bmp|tiff|webp)$/i, '.webp');
+            if (existsSync(webpPath) && this.force)
             await sharp(filePath)
                 .webp({ quality: 80, lossless: false }) // Adjust quality for lossy or use lossless: true
                 .toFile(webpPath);
-            console.log(`Converted: ${filePath} -> ${webpPath}`);
+            this.logger.log(`Converted: ${filePath} -> ${webpPath}`);
         } catch (error) {
-            console.error(`Failed to convert ${filePath}:`, error);
+            this.logger.error(`Failed to convert ${filePath}:`, error);
         }
     }
 
@@ -134,13 +197,16 @@ export default class CompressPublicImages {
      * Ensure directory existence (custom implementation)
      * @param {string} dir
      * @returns {Promise<void>}
+     * @async
      */
     async ensureDir(dir: string): Promise<void> {
         try {
             await mkdir(dir, { recursive: true });
         } catch (error) {
-            if (error instanceof Error && CompressPublicImages.instanceOfNodeError(error, TypeError) && error.code !== 'EEXIST') // Ignore error if the directory exists
+            // Ignore error if the directory exists, otherwise throw.
+            if (error instanceof Error && CompressPublicImages.instanceOfNodeError(error, TypeError) && error.code !== 'EEXIST') {
                 throw error;
+            }
         }
     }
 
@@ -149,18 +215,16 @@ export default class CompressPublicImages {
      * @param {string} inputFolder
      * @param {string} outputFolder
      * @returns {Promise<void>}
+     * @async
      */
     async compressAllPngs(inputFolder: string, outputFolder: string): Promise<void> {
         try {
             // Find all PNG files
-            /** @type {string[]} */
             const pngFiles: string[] = await this.findPngFiles(inputFolder);
 
             // Compress each PNG
             for (const filePath of pngFiles) {
-                /** @type {string} */
                 const relativePath: string = path.relative(inputFolder, filePath);
-                /** @type {string} */
                 const outputPath: string = path.join(outputFolder, relativePath);
 
                 // Ensure the output subfolder exists
@@ -169,9 +233,9 @@ export default class CompressPublicImages {
                 await this.compressPng(filePath, outputPath);
             }
 
-            console.log('Compression complete!');
+            this.logger.log('Compression complete!');
         } catch (error) {
-            console.error('Error:', error);
+            this.logger.error('Error:', error);
         }
     }
 
@@ -180,18 +244,16 @@ export default class CompressPublicImages {
      * @param {string} inputFolder
      * @param {string} outputFolder
      * @returns {Promise<void>}
+     * @async
      */
     async compressAllPngsToWebP(inputFolder: string, outputFolder: string): Promise<void> {
         try {
             // Find all PNG files
-            /** @type {string[]} */
             const pngFiles: string[] = await this.findPngFiles(inputFolder);
 
             // Convert each PNG to WebP
             for (const filePath of pngFiles) {
-                /** @type {string} */
                 const relativePath: string = path.relative(inputFolder, filePath);
-                /** @type {string} */
                 const outputPath: string = path.join(outputFolder, relativePath);
 
                 // Ensure the output subfolder exists
@@ -200,9 +262,9 @@ export default class CompressPublicImages {
                 await this.convertToWebP(filePath, outputPath);
             }
 
-            console.log('Conversion to WebP complete!');
+            this.logger.log('Conversion to WebP complete!');
         } catch (error) {
-            console.error('Error:', error);
+            this.logger.error('Error:', error);
         }
     }
 }

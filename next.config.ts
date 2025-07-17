@@ -79,7 +79,7 @@ const nextConfig: NextConfig = {
         );
         
         config.plugins ??= [];
-        config.plugins.push(new CompressPublicImages())
+        config.plugins.push(new CompressPublicImages({ force: env['NODE_ENV'] !== 'production' }))
         
         return config;
     },
