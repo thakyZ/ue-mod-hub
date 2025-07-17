@@ -3,10 +3,29 @@
 # PalHUB::Client by dekitarpg@gmail.com
 ########################################
 */
+import type { CommonIcon } from '@config/common-icons';
 import * as CommonIcons from '@config/common-icons';
-import { useCallback, useMemo, useState } from 'react';
+import type { HTMLAttributes } from 'react';
+import { useCallback, /* useMemo, */ useState } from 'react';
+import type { ButtonVariant } from 'react-bootstrap/esm/types';
 
-const DEFAULT_ICONS = {
+export declare interface IconsMap {
+    enabled: CommonIcon;
+    disabled: CommonIcon;
+}
+
+export declare interface DekCheckboxProps extends Pick<HTMLAttributes<HTMLDivElement>, 'className' | 'style'> {
+    text?: string;
+    checked?: boolean;
+    onClick?: (newval: boolean) => void;
+    icons?: IconsMap;
+    inline?: boolean;
+    iconPos?: 'right' | 'left';
+    color?: ButtonVariant;
+    labels?: [string | null | undefined, string | null | undefined];
+}
+
+const DEFAULT_ICONS: IconsMap = {
     enabled: CommonIcons.tog_enabled,
     disabled: CommonIcons.tog_disabled,
 };
@@ -17,16 +36,16 @@ export default function DekCheckbox({
     onClick = () => {},
     icons = DEFAULT_ICONS,
     inline = false,
-    iconPos='right',
+    iconPos = 'right',
     style = {},
     className = '',
     color = 'secondary',
-    labels=[null,null],
-}) {
-    const [active, setActive] = useState(checked);
+    labels = [null, null],
+}: DekCheckboxProps) {
+    const [active, _setActive] = useState<boolean>(checked);
     const Icon = checked ? icons.enabled : icons.disabled;
-    const onClickedBox = useCallback(() => {
-        const newval = !checked;
+    const onClickedBox = useCallback((): boolean => {
+        const newval: boolean = !checked;
         onClick(newval);
         return newval;
 
@@ -40,28 +59,41 @@ export default function DekCheckbox({
     // overwrite text if labels exist:
     text = labels[active ? 0 : 1] ?? text;
 
-    if (inline) return <div className={`d-inline-block hover-dark hover-${color} ${className}`}
-        onClick={onClickedBox}
-        style={{ cursor: 'pointer', ...style }}>
-        {iconPos === 'left' ? (<div className=''>
-            <Icon fill='currentColor' height='1rem' />
-            <small className='mx-1'>{text}</small>
-        </div>) : (<>
-            <small className='mx-1'>{text}</small>
-            <Icon fill='currentColor' height='1rem' />
-        </>)}
-    </div>;
-
-    return <div className={'btn p-0 no-shadow hover-dark hover-secondary ' + className}
-        onClick={onClickedBox}
-        style={{ ...style }}>
-        <div className='col text-center'>
-            <div className='row'>
-                <small className='me-0'>{text}</small>
+    if (inline)
+        return (
+            <div
+                className={`d-inline-block hover-dark hover-${color} ${className}`}
+                onClick={onClickedBox}
+                style={{ cursor: 'pointer', ...style }}
+            >
+                {iconPos === 'left' ? (
+                    <div className="">
+                        <Icon fill="currentColor" height="1rem" />
+                        <small className="mx-1">{text}</small>
+                    </div>
+                ) : (
+                    <>
+                        <small className="mx-1">{text}</small>
+                        <Icon fill="currentColor" height="1rem" />
+                    </>
+                )}
             </div>
-            <div className='d-inline'>
-                <Icon height='1rem' fill='currentColor' />
+        );
+
+    return (
+        <div
+            className={'btn p-0 no-shadow hover-dark hover-secondary ' + className}
+            onClick={onClickedBox}
+            style={{ ...style }}
+        >
+            <div className="col text-center">
+                <div className="row">
+                    <small className="me-0">{text}</small>
+                </div>
+                <div className="d-inline">
+                    <Icon height="1rem" fill="currentColor" />
+                </div>
             </div>
         </div>
-    </div>;
+    );
 }

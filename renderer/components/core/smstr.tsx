@@ -4,7 +4,13 @@
 ########################################
 */
 
-export default function SmallStrong({ text }) {
+import type { ReactElement } from 'react';
+
+export declare interface SmallStrongProps {
+    text: string;
+}
+
+export default function SmallStrong({ text }: SmallStrongProps): ReactElement<SmallStrongProps> {
     return (
         <small>
             <strong>{text}</strong>

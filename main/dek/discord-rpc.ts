@@ -1,85 +1,109 @@
+import { existsSync } from 'node:fs';
+import { env, platform } from 'node:process';
 
-import DEAP from './deap';
+import localization from '@locales/en-dektionary.json';
+import type { Locale, LocaleGameNameKeyPair } from '@locales/en-dektionary.json';
+import DEAP from '@main/dek/deap';
 import DiscordRPC from 'discord-rpc';
-
-import localization from '../../renderer/locales/en-dektionary.json';
-import fs from 'fs';
+import type { ValueOf } from 'type-fest';
 
 // const path = require('path');
 // const { app } = require('electron');
 // import {config} from 'dotenv';
 // config({ path: path.join(app.getAppPath(), '.env') });
 
+export declare interface DiscordRpc {
+    started: boolean;
+    paused: boolean;
+    handle: NodeJS.Timeout | undefined;
+    isset: boolean;
+    available(): boolean;
+    start(): void;
+    stop(): void;
+    pause(): void;
+    unpause(): void;
+    update(): Promise<void>;
+}
 
-// Including your Discord App ID in a public repo is safe as long as you 
+// Including your Discord App ID in a public repo is safe as long as you
 // do not include your client secret, bot token, or any sensitive keys.
 
-const clientId = "1330098254653816842";
+/** @type {string} */
+const clientId: string = '1330098254653816842';
 
 // Only needed if using spectate, join, or ask to join
 // DiscordRPC.register(clientId);
 
-const rpc = new DiscordRPC.Client({ transport: 'ipc' });
+/** @type {DiscordRPC.Client} */
+const rpc: DiscordRPC.Client = new DiscordRPC.Client({ transport: 'ipc' });
 
+/** @type {string} */
+const nexusBaseURL: string = 'https://www.nexusmods.com';
+/** @type {Record<string, number>} */
+const gameToAppModID: Record<string, number> = {
+    palworld: 2017,
+    ff7rebirth: 69,
+    'stellar-blade': 206,
+};
 
-const nexusBaseURL = 'https://www.nexusmods.com';
-const gameToAppModID = {
-    "palworld": 2017,
-    "ff7rebirth": 69,
-    "stellar-blade": 206,
-}
+/** @type {number} 30,000 */
+const UPDATE_FREQ: number = 30e3; //15e3;
+/** @type {number} 900,000 */
+const REATTEMPT_FREQ: number = 15 * 60e3; // every 15 minutes:
 
-const UPDATE_FREQ = 30e3;//15e3;
-const REATTEMPT_FREQ = 15 * 60e3; // every 15 minutes:
+/** @type {Date | undefined} */
+let startTimestamp: Date | undefined;
 
-let startTimestamp;
-
+/** @type {DiscordRpc} */
 export default {
     started: false,
     paused: false,
-    handle: null,
+    handle: undefined,
     isset: false,
-    available() {
-        let ipcPath = `\\\\?\\pipe\\discord-ipc-0`;
-        if (!process.platform === 'win32') {
-            ipcPath = `${process.env.XDG_RUNTIME_DIR || '/tmp'}/discord-ipc-0`;
-        } 
-        return fs.existsSync(ipcPath);
+    available(): boolean {
+        /** @type {string} */
+        let ipcPath: string = `\\\\?\\pipe\\discord-ipc-0`;
+        if (platform !== 'win32') {
+            ipcPath = `${env['XDG_RUNTIME_DIR'] || '/tmp'}/discord-ipc-0`;
+        }
+        return existsSync(ipcPath);
     },
-    start() {
+    start(): void {
         // const available = this.available();
         // console.log('Starting Discord RPC:', available);
         // if (!available) return;
-        rpc.login({ clientId }).then(() => {
-            console.log('Discord RPC connected');
-            startTimestamp = new Date();
-            this.started = true;
-            this.paused = false;
-            this.handle = setInterval(() => {
-                this.update();
-            }, UPDATE_FREQ);
-            this.update();
-        }).catch(error => {
-            console.error('Discord RPC error:', error);
-            setTimeout(() => this.start(), REATTEMPT_FREQ); // re-attempt connection
-        });
+        rpc.login({ clientId })
+            .then(() => {
+                console.log('Discord RPC connected');
+                startTimestamp = new Date();
+                this.started = true;
+                this.paused = false;
+                this.handle = setInterval((): void => {
+                    void this.update();
+                }, UPDATE_FREQ);
+                void this.update();
+            })
+            .catch((error?: unknown): void => {
+                console.error('Discord RPC error:', error);
+                setTimeout((): void => this.start(), REATTEMPT_FREQ); // re-attempt connection
+            });
     },
-    stop() {
+    stop(): void {
         if (!this.started) return;
         if (!this.handle) return;
         clearInterval(this.handle);
         this.started = false;
         this.paused = false;
-        rpc.destroy();
+        void rpc.destroy();
     },
-    pause() {
+    pause(): void {
         if (!this.started) return;
         if (this.paused) return;
         this.paused = true;
-        rpc.clearActivity();
+        void rpc.clearActivity();
         console.log('Paused Discord RPC');
     },
-    unpause() {
+    unpause(): void {
         if (!this.paused) return;
         if (!this.started) this.start();
         startTimestamp = new Date();
@@ -87,40 +111,59 @@ export default {
         // this.update();
         console.log('Unpaused Discord RPC');
     },
-    async update() {
+    async update(): Promise<void> {
         if (!rpc) return;
         if (!this.started) return;
         if (this.paused) return;
-        
-        const allowRPC = await DEAP.datastore.get('allow-rpc');
-        if (!allowRPC && this.isset) return rpc.clearActivity();
+
+        /** @type {boolean} */
+        const allowRPC: boolean = DEAP.datastore?.get('allow-rpc') === true;
+        if (!allowRPC && this.isset) return void rpc.clearActivity();
         if (!allowRPC) return;
-        
+
         // console.log('Updating Discord RPC');
 
         // const playtime = new Date() - startTimestamp;
         // const minutes = Math.floor(playtime / 60000);
-        const maxLen = 23;
-        const gameData = await DEAP.datastore.get('games.active');
-        const gameName = gameData ? gameData.split('.')[0] : 'unknown';
-        const localGameName = localization.games?.[gameName]?.name || gameName;
-        const nameLen = localGameName.length;
-        const details = nameLen > maxLen ? `Managing Game Mods For:` : `Managing Mods`;
-        const state = nameLen > maxLen ? localGameName : `For: ${localGameName}`;
-        const largeImageText = `Mod Hub: The ultimate mod manager for Unreal Engine games!`; 
-        const largeImageKey = 'app-icon';
+        /** @type {number} */
+        const maxLen: number = 23;
+        /** @type {string | undefined} */
+        const gameData: string | undefined = DEAP.datastore?.get('games.active');
+        type KeyOfLocalizationGames = keyof ValueOf<Locale, 'games'>;
+        /** @type {keyof Locale['games']} */
+        const gameName: KeyOfLocalizationGames = (
+            gameData ? gameData.split('.')?.[0] || 'unknown' : 'unknown'
+        ) as KeyOfLocalizationGames;
+        // prettier-ignore
+        type LocalGameName = keyof LocaleGameNameKeyPair | KeyOfLocalizationGames; // eslint-disable-line @typescript-eslint/no-redundant-type-constituents
+        /** @type {string} */
+        const localGameName: LocalGameName = (localization.games?.[gameName]?.name || gameName) as LocalGameName;
+        /** @type {number} */
+        const nameLen: number = localGameName.length;
+        /** @type {string} */
+        const details: string = nameLen > maxLen ? `Managing Game Mods For:` : `Managing Mods`;
+        /** @type {string} */
+        const state: string = nameLen > maxLen ? localGameName : `For: ${localGameName}`;
+        /** @type {string} */
+        const largeImageText: string = `Mod Hub: The ultimate mod manager for Unreal Engine games!`;
+        /** @type {string} */
+        const largeImageKey: string = 'app-icon';
 
-        let buttons = undefined;
-        const nexusAppModID = gameToAppModID[gameName];
+        /** @type {[{ label: string; url: string }] | undefined} */
+        let buttons: [{ label: string; url: string }] | undefined = undefined;
+        /** @type {number | undefined} */
+        const nexusAppModID: number | undefined = gameToAppModID[gameName];
         if (nexusAppModID) {
-            const url = `${nexusBaseURL}/${gameName}/mods/${nexusAppModID}`;
+            /** @type {string} */
+            const url: string = `${nexusBaseURL}/${gameName}/mods/${nexusAppModID}`;
             buttons = [{ label: 'Get The Mod Hub App', url }];
         }
 
         // NOTE: need to have any used image assets uploaded to
         // https://discord.com/developers/applications/<application_id>/rich-presence/assets
-        rpc.setActivity({
-            details, state, 
+        await rpc.setActivity({
+            details,
+            state,
             startTimestamp,
             largeImageKey,
             largeImageText,
@@ -145,5 +188,4 @@ export default {
         });
         this.isset = true;
     },
-}
-
+} as DiscordRpc;

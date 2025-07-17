@@ -4,32 +4,45 @@
 ########################################
 */
 
-import React from 'react';
-import Carousel from 'react-bootstrap/Carousel';
-import MarkdownRenderer from '@components/markdown/renderer';
 // import BBCodeRenderer from '@components/core/bbcode';
-
-import { ENVEntry, ENVEntry_Input, ensureEntryValueType } from '@components/modals/common';
+import DekCheckbox from '@components/core/dek-checkbox';
+import DekChoice from '@components/core/dek-choice';
+import DekDiv from '@components/core/dek-div';
 // import DekSelect from '@components/core/dek-select';
 // import DekSwitch from '@components/core/dek-switch';
-import DekChoice from '@components/core/dek-choice';
-// import DekCheckbox from '@components/core/dek-checkbox';
-
 import ModFileCard from '@components/core/mod-file-card';
-import Link from 'next/link';
-
-import DekCheckbox from '@components/core/dek-checkbox';
-
-import * as CommonIcons from '@config/common-icons';
-import useLocalization from '@hooks/useLocalization';
 import DekCommonAppModal from '@components/core/modal';
-import useScreenSize from '@hooks/useScreenSize';
+import MarkdownRenderer from '@components/markdown/renderer';
+import { ensureEntryValueType } from '@components/modals/common';
+import type { ServerListing } from '@components/server-card';
+// import * as CommonIcons from '@config/common-icons';
+import type { AppLogger } from '@hooks/use-app-logger';
+import useAppLogger from '@hooks/use-app-logger';
+import type { CommonAppDataContextType } from '@hooks/use-common-checks';
+import useCommonChecks, { handleError, parseIntSafe } from '@hooks/use-common-checks';
+import type { UseLocalizationReturn } from '@hooks/use-localization';
+import useLocalization from '@hooks/use-localization';
+import type { UseScreenSizeReturn } from '@hooks/use-screen-size';
+import useScreenSize from '@hooks/use-screen-size';
+import type { IModInfoWithSavedConfig, InstallModFileEvent, ValidateGamePathReturnType } from '@main/dek/palhub-types';
+import type {
+    IDownloadURL,
+    IFileInfo as NexusIFileInfo,
+    IModFiles,
+    IModInfo as NexusIModInfo,
+} from '@nexusmods/nexus-api';
+import type { TypeFunctionWithArgs, UseStatePair } from '@typed/common';
 import wait from '@utils/wait';
-import useCommonChecks from '@hooks/useCommonChecks';
+import type { RendererIpcEvent } from 'electron-ipc-extended';
+import Link from 'next/link';
+import type { Dispatch, HTMLAttributes, MutableRefObject, ReactElement, SetStateAction } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Image } from 'react-bootstrap';
+import Carousel from 'react-bootstrap/Carousel';
 
-// HIDDEN either because should not be shown to end user, 
+// HIDDEN either because should not be shown to end user,
 // or because the information is shown in a different way <3
-const HIDDEN_SERVER_DATA_KEYS = [
+const HIDDEN_SERVER_DATA_KEYS: Set<keyof ServerListing> = new Set([
     'mods',
     'splashURL',
     'serverName',
@@ -55,45 +68,74 @@ const HIDDEN_SERVER_DATA_KEYS = [
     'discordServerID',
     'playerCount',
     'fps',
-];
+]);
 
+export declare interface ServerDetailsModalProps {
+    show: boolean;
+    setShow: Dispatch<SetStateAction<boolean>>;
+    server: ServerListing | null;
+}
 
-export default function ServerDetailsModal({ show, setShow, server }) {
-    const { requiredModulesLoaded, commonAppData } = useCommonChecks();
+export declare type ServerModFileType = 'required' | 'optional';
 
-    const { t, tA } = useLocalization();
-    const { isDesktop } = useScreenSize();
-    const fullscreen = !isDesktop;
-    const height = fullscreen ? "calc(100vh - 96px)" : "calc(100vh / 4 * 3)";
+export declare interface ServerModFile {
+    mod: IModInfoWithSavedConfig;
+    file: NexusIFileInfo;
+    type?: ServerModFileType;
+}
 
-    const [serverpageID, setServerpageID] = React.useState(0);
-    const serverpageTypes = tA('modals.server-details.tabs', 3);
-    const [servermodFiles, setServerModFiles] = React.useState([]);
+export declare interface ServerDetailsModsEntry {
+    [mod_id: number]: number;
+}
 
-    const [logMessages, setLogMessages] = React.useState([]);
-    const [isProcessing, setIsProcessing] = React.useState(false);
-    const [isComplete, setIsComplete] = React.useState(false);
-    const logRef = React.useRef(null);
+export declare interface ServerDetailsMods {
+    required: ServerDetailsModsEntry;
+    optional: ServerDetailsModsEntry;
+}
 
-    const [showPassword, setShowPassword] = React.useState(false);
-    const [rememberPassword, setRememberPassword] = React.useState(true);
-    const passwordRef = React.useRef(null);
+export default function ServerDetailsModal({
+    show,
+    setShow,
+    server,
+}: ServerDetailsModalProps): ReactElement<ServerDetailsModalProps> | null {
+    const applog: AppLogger = useAppLogger('ServerDetailsModal');
+    const { commonAppData }: CommonAppDataContextType = useCommonChecks();
 
-    const [hasGotMods, setHasGotMods] = React.useState(false);
-    const [hasGotPassword, setHasGotPassword] = React.useState(false);
+    const { t, tA }: UseLocalizationReturn = useLocalization();
+    const { isDesktop }: UseScreenSizeReturn = useScreenSize();
+    const fullscreen: boolean = !isDesktop;
+    const height: string = fullscreen ? 'calc(100vh - 96px)' : 'calc(100vh / 4 * 3)';
 
-    const addLogMessage = (message) => {
-        setLogMessages((old) => [...old, message]);
-        if (logRef.current) setTimeout(() => (logRef.current.scrollTop = logRef.current.scrollHeight));
+    const [serverpageID, setServerpageID]: UseStatePair<number> = useState<number>(0);
+    const serverpageTypes: string[] = tA('modals.server-details.tabs', 3);
+    const [servermodFiles, setServerModFiles]: UseStatePair<ServerModFile[]> = useState<ServerModFile[]>(
+        [] as ServerModFile[]
+    );
+
+    const [logMessages, setLogMessages]: UseStatePair<string[]> = useState<string[]>([] as string[]);
+    const [isProcessing, setIsProcessing]: UseStatePair<boolean> = useState<boolean>(false);
+    const [isComplete, setIsComplete]: UseStatePair<boolean> = useState<boolean>(false);
+    const logRef: MutableRefObject<HTMLDivElement | null> = useRef<HTMLDivElement | null>(null);
+
+    const [showPassword, setShowPassword]: UseStatePair<boolean> = useState<boolean>(false);
+    const [rememberPassword, setRememberPassword]: UseStatePair<boolean> = useState<boolean>(true);
+    const passwordRef: MutableRefObject<HTMLInputElement | null> = useRef<HTMLInputElement | null>(null);
+
+    const [hasGotMods, setHasGotMods]: UseStatePair<boolean> = useState<boolean>(false);
+    const [hasGotPassword, setHasGotPassword]: UseStatePair<boolean> = useState<boolean>(false);
+
+    const addLogMessage = (message: string): void => {
+        setLogMessages((old: string[]): string[] => [...old, message]);
+        if (logRef.current) setTimeout((): number => (logRef.current!.scrollTop = logRef.current!.scrollHeight));
     };
 
-    const resetLogMessages = () => {
+    const resetLogMessages: VoidFunction = (): void => {
         setLogMessages([]);
     };
 
-    const onCancel = React.useCallback(() => {
+    const onCancel: VoidFunction = useCallback((): void => {
         setShow(false);
-        setTimeout(() => {
+        setTimeout((): void => {
             setIsProcessing(false);
             setServerModFiles([]);
             setIsComplete(false);
@@ -101,151 +143,188 @@ export default function ServerDetailsModal({ show, setShow, server }) {
         }, 250);
     }, []);
 
-    const onClickJoinServer = React.useCallback(async () => {
-        try {
+    const onClickJoinServer: VoidFunction = useCallback((): void => {
+        (async (): Promise<void> => {
+            try {
+                if (!window.uStore) return console.error('uStore not loaded');
+                if (!window.palhub) return console.error('palhub not loaded');
+                if (!window.nexus) return console.error('nexus not loaded');
+                if (!server) return;
+
+                // const game_path = await window.uStore.get('game_path');
+                const game_path: string | undefined = commonAppData?.selectedGame?.path;
+                if (!game_path) return console.error('game_path not found');
+
+                const game_data: ValidateGamePathReturnType = await window.palhub('validateGamePath', game_path);
+                if (!('has_exe' in game_data) || !game_data.has_exe) return console.error('game exe not found');
+
+                // const api_key: string = await window.uStore.get('api-keys.nexus');
+                const cache_dir: string = await window.uStore.get<string>('app-cache');
+
+                await window.palhub('installAppSpecificMods', game_path, game_data.id);
+
+                // check all required mods are installed:
+                for (const [_index, { mod, file }] of servermodFiles.entries()) {
+                    const is_downloaded = await window.palhub('checkModFileIsDownloaded', cache_dir, file);
+                    const is_installed = await window.palhub('checkModIsInstalled', game_path, mod); //, file);
+                    if (!is_downloaded) throw new Error('mod not downloaded:', { cause: { mod, file } });
+                    if (!is_installed) throw new Error('mod not installed:', { cause: { mod, file } });
+                }
+
+                if (rememberPassword && server.palhubServerURL && passwordRef?.current?.value?.length) {
+                    await window.serverCache.set(server.palhubServerURL, passwordRef?.current.value);
+                }
+                // await window.uStore.set('remeber_server_passwords', rememberPassword);
+
+                console.log('writing launch config:', game_data.content_path);
+                await window.palhub(
+                    'writeJSON',
+                    game_data.content_path,
+                    {
+                        'auto-join-server': {
+                            // Handle IPv4-mapped IPv6 addresses (like ::ffff:172.24.0.6)
+                            path: server.palhubServerURL,
+                            pass: passwordRef?.current?.value ?? '',
+                        },
+                    },
+                    'palhub.launch.config.json'
+                );
+
+                console.log('launching game:', game_data.exe_path);
+                await window.palhub('launchExe', game_data.exe_path, []);
+                onCancel();
+            } catch (error) {
+                console.log('onClickJoinServer error:', error);
+                setHasGotPassword(!!passwordRef?.current?.value?.length);
+                setHasGotMods(false);
+            }
+        })().catch((error: unknown) => handleError(error, applog));
+    }, [server, servermodFiles, passwordRef, rememberPassword, commonAppData, onCancel]);
+
+    const onInstallServerModList: VoidFunction = useCallback((): void => {
+        (async (): Promise<void> => {
+            console.log('onInstallServerModList');
+            // return;
+
             if (!window.uStore) return console.error('uStore not loaded');
             if (!window.palhub) return console.error('palhub not loaded');
             if (!window.nexus) return console.error('nexus not loaded');
-            if (!server) return;
+            if (!servermodFiles || servermodFiles.length === 0) return;
 
-            // const game_path = await window.uStore.get('game_path');
-            const game_path = commonAppData?.selectedGame.path;
-            if (!game_path) return console.error('game_path not found');
+            const api_key: string = await window.uStore.get('api-keys.nexus');
+            const game_path: string | undefined = await window.uStore.get('game-path');
+            if (!game_path) return;
+            const cache_dir: string = await window.uStore.get('app-cache');
 
-            const game_data = await window.palhub('validateGamePath', game_path);
-            if (!game_data.has_exe) return console.error('game exe not found');
+            setIsComplete(false);
+            setIsProcessing(true);
 
-            // const api_key = await window.uStore.get('api_key');
-            const cache_dir = await window.uStore.get('cache_dir');
+            resetLogMessages();
+            addLogMessage('Downloading and Installing Mods...');
 
-            await window.palhub('installAppSpecificMods', game_path, game_data.id);
+            const wait_between: number = 1000;
 
-            // check all required mods are installed:
+            console.log({ api_key, game_path, cache_dir });
+
+            addLogMessage('Uninstalling Previous Mods...');
+            await window.palhub('uninstallAllMods', game_path);
+            await wait(wait_between);
+            addLogMessage('Uninstalled Previous Mods...');
+
+            const total = servermodFiles.length;
             for (const [index, { mod, file }] of servermodFiles.entries()) {
-                const is_downloaded = await window.palhub('checkModFileIsDownloaded', cache_dir, file);
-                const is_installed = await window.palhub('checkModIsInstalled', game_path, mod);//, file);
-                if (!is_downloaded) throw new Error('mod not downloaded:', mod, file);
-                if (!is_installed) throw new Error('mod not installed:', mod, file);
-            }
+                if (!mod.mod_id) continue;
+                // console.log({index, mod, file});
 
-            if (rememberPassword && passwordRef?.current?.value?.length) {
-                await window.serverCache.set(server.palhubServerURL, passwordRef.current.value);
-            }
-            // await window.uStore.set('remeber_server_passwords', rememberPassword);
+                addLogMessage(`Processing Mod... ${index + 1} / ${total}`);
+                // downloadMod(cache_path, download_url, mod, file)
 
-            console.log('writing launch config:', game_data.content_path);
-            await window.palhub('writeJSON', game_data.content_path, {
-                'auto-join-server': {
-                    // Handle IPv4-mapped IPv6 addresses (like ::ffff:172.24.0.6)
-                    path: server.palhubServerURL,
-                    pass: passwordRef?.current?.value ?? '',
-                },
-            }, 'palhub.launch.config.json');
+                let download: string | boolean = 'already-downloaded';
+                try {
+                    const downloaded: boolean = await window.palhub('checkModFileIsDownloaded', cache_dir, file);
+                    if (!downloaded) {
+                        addLogMessage(`Getting Download Link: ${mod.name}`);
+                        const file_links: IDownloadURL[] = await window.nexus(
+                            api_key,
+                            'getDownloadURLs',
+                            parseIntSafe(mod.mod_id)!,
+                            file.file_id
+                        );
+                        const download_url: string | undefined = file_links.find(
+                            (link: IDownloadURL): boolean => !!link.URI
+                        )?.URI;
 
-            console.log('launching game:', game_data.exe_path);
-            await window.palhub('launchExe', game_data.exe_path);
-            onCancel();
-        } catch (error) {
-            console.log('onClickJoinServer error:', error);
-            setHasGotPassword(passwordRef?.current?.value?.length);
-            setHasGotMods(false);
-        }
-    }, [server, servermodFiles, passwordRef, rememberPassword, commonAppData, onCancel]);
+                        addLogMessage(`Downloading Mod From: ${download_url}`);
+                        download = await window.palhub('downloadMod', cache_dir, download_url, mod, file);
 
-    const onInstallServerModList = React.useCallback(async () => {
-        console.log('onInstallServerModList');
-        // return;
-
-        if (!window.uStore) return console.error('uStore not loaded');
-        if (!window.palhub) return console.error('palhub not loaded');
-        if (!window.nexus) return console.error('nexus not loaded');
-        if (!servermodFiles || !servermodFiles.length) return;
-
-        const api_key = await window.uStore.get('api_key');
-        const game_path = await window.uStore.get('game_path');
-        const cache_dir = await window.uStore.get('cache_dir');
-
-        setIsComplete(false);
-        setIsProcessing(true);
-
-        resetLogMessages();
-        addLogMessage('Downloading and Installing Mods...');
-
-        const wait_between = 1000;
-
-        console.log({ api_key, game_path, cache_dir });
-
-        addLogMessage('Uninstalling Previous Mods...');
-        await window.palhub('uninstallAllMods', game_path);
-        await wait(wait_between);
-        addLogMessage('Uninstalled Previous Mods...');
-
-        const total = servermodFiles.length;
-        for (const [index, { mod, file }] of servermodFiles.entries()) {
-            // console.log({index, mod, file});
-
-            addLogMessage(`Processing Mod... ${index + 1} / ${total}`);
-            // downloadMod(cache_path, download_url, mod, file)
-
-            let download = 'already-downloaded';
-            try {
-                const downloaded = await window.palhub('checkModFileIsDownloaded', cache_dir, file);
-                if (!downloaded) {
-                    addLogMessage(`Getting Download Link: ${mod.name}`);
-                    const file_links = await window.nexus(api_key, 'getDownloadURLs', mod.mod_id, file.file_id);
-                    const download_url = file_links.find((link) => !!link.URI)?.URI;
-
-                    addLogMessage(`Downloading Mod From: ${download_url}`);
-                    download = await window.palhub('downloadMod', cache_dir, download_url, mod, file);
+                        await wait(wait_between);
+                        addLogMessage(`Downloaded Mod... ${mod.name}`);
+                        console.log({ file_links, download_url, download });
+                    }
+                } catch (error: unknown) {
+                    addLogMessage(`Error Downloading Mod: ${mod.name}`);
+                    console.log('download error:', error);
+                }
+                await wait(wait_between);
+                try {
+                    const install: boolean = await window.palhub('installMod', cache_dir, game_path, mod, file);
 
                     await wait(wait_between);
-                    addLogMessage(`Downloaded Mod... ${mod.name}`);
-                    console.log({ file_links, download_url, download });
+                    addLogMessage(`Successfully Installed Mod: ${mod.name}`);
+                    console.log({ install });
+                } catch (error: unknown) {
+                    addLogMessage(`Error Installing Mod: ${mod.name}`);
+                    console.log('install error:', error);
                 }
-            } catch (error) {
-                addLogMessage(`Error Downloading Mod: ${mod.name}`);
-                console.log('download error:', error);
-            }
-            await wait(wait_between);
-            try {
-                const install = await window.palhub('installMod', cache_dir, game_path, mod, file);
-
                 await wait(wait_between);
-                addLogMessage(`Successfully Installed Mod: ${mod.name}`);
-                console.log({ install });
-            } catch (error) {
-                addLogMessage(`Error Installing Mod: ${mod.name}`);
-                console.log('install error:', error);
             }
+
+            addLogMessage(`Downloaded and Installed ${total} mods!`);
             await wait(wait_between);
-        }
+            setIsProcessing(false);
+            setIsComplete(true);
 
-        addLogMessage(`Downloaded and Installed ${total} mods!`);
-        await wait(wait_between);
-        setIsProcessing(false);
-        setIsComplete(true);
+            setTimeout((): void => {
+                setIsComplete(false);
+            }, 1000);
+        })().catch((error: unknown) => handleError(error, applog));
+    }, [servermodFiles, handleError, resetLogMessages, addLogMessage]);
 
-        setTimeout(() => {
-            setIsComplete(false);
-        }, 1000);
-    }, [servermodFiles]);
-
-    React.useEffect(() => {
+    useEffect((): VoidFunction | void => {
         if (!window.ipc) return console.error('ipc not loaded');
 
-        const remove_dl_handler = window.ipc.on('download-mod-file', ({ mod_id, file_id, percentage }) => {
-            addLogMessage(`Downloading Mod: ${mod_id} / ${file_id} - ${percentage}%`);
-        });
+        const remove_dl_handler: VoidFunction = window.ipc.on(
+            'download-mod-file',
+            (_event: RendererIpcEvent, { mod_id, file_id, percentage }) => {
+                addLogMessage(`Downloading Mod: ${mod_id} / ${file_id} - ${percentage}%`);
+            }
+        );
 
-        const remove_in_handler = window.ipc.on('install-mod-file', ({ install_path, name, version, mod_id, file_id, entries }) => {
-            addLogMessage(`Installing Mod: ${name} v${version}`);
-            // console.log({install_path, mod_id, file_id, entries});
-        });
+        const remove_in_handler: VoidFunction = window.ipc.on(
+            'install-mod-file',
+            (
+                _event: RendererIpcEvent,
+                {
+                    install_path: _install_path,
+                    name,
+                    version,
+                    mod_id: _mod_id,
+                    file_id: _file_id,
+                    entries: _entries,
+                }: InstallModFileEvent
+            ) => {
+                addLogMessage(`Installing Mod: ${name} v${version}`);
+                // console.log({_install_path, _mod_id, _file_id, _entries});
+            }
+        );
 
-        const remove_ex_handler = window.ipc.on('extract-mod-file', ({ entry, outputPath }) => {
-            addLogMessage(`Extracting: ${entry}`);
-            // console.log({entry, outputPath});
-        });
+        const remove_ex_handler: VoidFunction = window.ipc.on(
+            'extract-mod-file',
+            (_event: RendererIpcEvent, { entry, outputPath: _outputPath }) => {
+                addLogMessage(`Extracting: ${entry}`);
+                // console.log({entry, _outputPath});
+            }
+        );
 
         return () => {
             remove_dl_handler();
@@ -256,39 +335,51 @@ export default function ServerDetailsModal({ show, setShow, server }) {
 
     const shouldShowLogs = isComplete || isProcessing;
 
-    React.useEffect(() => {
-        (async () => {
+    const safeParseIntoNumber: TypeFunctionWithArgs<[value: string | number], number> = (
+        value: string | number
+    ): number => {
+        if (typeof value === 'string') return Number.parseInt(value);
+        return value;
+    };
+
+    useEffect((): void => {
+        (async (): Promise<void> => {
             if (!window.uStore) return console.error('uStore not loaded');
             if (!window.palhub) return console.error('palhub not loaded');
             if (!window.nexus) return console.error('nexus not loaded');
             if (!window.serverCache) return console.error('serverCache not loaded');
-            if (!server) return;
-            const api_key = await window.uStore.get('api_key');
-            const game_path = await window.uStore.get('game_path');
-            const cache_dir = await window.uStore.get('cache_dir');
+            if (!server || !server.mods) return;
+            const api_key: string = await window.uStore.get('api-keys.nexus');
+            const game_path: string | undefined = await window.uStore.get('game-path');
+            const cache_dir: string | null = await window.uStore.get('app-cache');
+            if (!cache_dir || !game_path) return;
 
-            const server_mod_files = [];
+            const server_mod_files: ServerModFile[] = [];
 
-            const addModAndFile = async (mod_id, file_id, type) => {
+            const addModAndFile = async (mod_id: number, file_id: number, type: ServerModFileType): Promise<void> => {
                 console.log('getModAndFile:', mod_id, file_id, type);
                 try {
-                    const mod = await window.nexus(api_key, 'getModInfo', mod_id);
-                    if (!mod) throw Error('mod not found:', mod_id);
-                    const { files } = await window.nexus(api_key, 'getModFiles', mod_id);
-                    const file = files.find((f) => f.file_id == file_id); // not === as may be string or int
-                    if (!file) throw Error('file not found:', file_id);
+                    const mod: NexusIModInfo = await window.nexus(api_key, 'getModInfo', mod_id);
+                    if (!mod) throw new Error(`mod not found: ${mod_id}`);
+                    const { files }: IModFiles = await window.nexus(api_key, 'getModFiles', mod_id);
+                    const file: NexusIFileInfo | undefined = files.find(
+                        (f: NexusIFileInfo): boolean => f.file_id == file_id // not === as may be string or int
+                    );
+                    if (!file) throw new Error(`file not found: ${file_id}`);
                     server_mod_files.push({ file, mod, type });
-                } catch (error) {
+                } catch (error: unknown) {
                     console.log('getModAndFile error:', error);
                 }
             };
 
-            for (const mod_id in server.mods.required) {
-                const file_id = server.mods.required[mod_id];
+            for (const mod_id of Object.keys(server.mods.required)) {
+                const file_id: number | undefined = server.mods.required[mod_id];
+                if (!file_id) continue;
                 await addModAndFile(mod_id, file_id, 'required');
             }
-            for (const mod_id in server.mods.optional) {
-                const file_id = server.mods.optional[mod_id];
+            for (const mod_id of Object.keys(server.mods.optional)) {
+                const file_id: number | undefined = server.mods.optional[mod_id];
+                if (!file_id) continue;
                 await addModAndFile(mod_id, file_id, 'optional');
             }
             // for (const mod_id in server.mods.blocked) {
@@ -296,28 +387,28 @@ export default function ServerDetailsModal({ show, setShow, server }) {
             //     await addModAndFile(mod_id, file_id, 'blocked');
             // }
 
-            if (rememberPassword) {
+            if (rememberPassword && server.palhubServerURL) {
                 console.log('getting:/...', server.palhubServerURL);
-                const password = await window.serverCache.get(server.palhubServerURL);
+                const password: string | undefined = await window.serverCache.get(server.palhubServerURL, undefined!);
                 if (password && passwordRef.current) passwordRef.current.value = password;
             }
 
             setServerModFiles(server_mod_files);
 
             // check if password is required:
-            const wants_password = server.serverPassword?.length;
-            const has_password = passwordRef?.current?.value?.length;
+            const wants_password: boolean = !!server.serverPassword?.length;
+            const has_password: boolean = !!passwordRef?.current?.value?.length;
             setHasGotPassword(wants_password ? has_password : true);
 
             // check all required mods are installed:
-            for (const [index, { mod, file }] of servermodFiles.entries()) {
-                const is_downloaded = await window.palhub('checkModFileIsDownloaded', cache_dir, file);
-                const is_installed = await window.palhub('checkModIsInstalled', game_path, mod, file);
+            for (const [_index, { mod, file }] of servermodFiles.entries()) {
+                const is_downloaded: boolean = await window.palhub('checkModFileIsDownloaded', cache_dir, file);
+                const is_installed: boolean = await window.palhub('checkModIsInstalled', game_path, mod, file);
                 if (!is_downloaded || !is_installed) return setHasGotMods(false);
             }
             setHasGotMods(true);
-        })();
-    }, [show]); //server, rememberPassword, passwordRef?.current?.value]);
+        })().catch((error: unknown) => handleError(error, applog));
+    }, [server, show, safeParseIntoNumber, setServerModFiles, setHasGotPassword, setHasGotMods, handleError]); //server, rememberPassword, passwordRef?.current?.value]);
 
     if (!server) return null;
 
@@ -330,129 +421,159 @@ export default function ServerDetailsModal({ show, setShow, server }) {
     };
 
     const headerText = `${server.serverName} - ${server.gameVersion}`;
-    const modalOptions = {show, setShow, onCancel, headerText, showX: !shouldShowLogs};
-    return <DekCommonAppModal {...modalOptions}>
-        <div type="DekBody" className='d-block overflow-y-scroll' style={{height}}>
-            <div className='p-3'>
-                {!shouldShowLogs && <React.Fragment>
-                    <div className="ratio ratio-16x9">
-                        <img src={server.splashURL} alt={server.serverName} className="d-block w-100" />
-                    </div>
-                    <div className="row">
-                        <DekChoice
-                            className="col py-3"
-                            // disabled={true}
-                            choices={serverpageTypes}
-                            active={serverpageID}
-                            onClick={(i, value) => {
-                                console.log(`Setting Page: ${value}`);
-                                setServerpageID(i);
-                            }}
-                        />
-                        <div className="col-12 col-sm-4 col-md-3 pt-sm-3 pt-0 py-3">
-                            <button className="btn btn-success px-4 w-100" onClick={onClickJoinServer}>
-                                <strong>{t('modals.server-details.join')}</strong>
-                                <br />
-                            </button>
-                        </div>
-                    </div>
-                </React.Fragment>}
-
-                {(!hasGotMods || !hasGotPassword) && <div className="alert alert-danger text-center">
-                    {!hasGotMods && <div className="container">
-                        <strong>{t('common.note')}</strong> {t('modals.server-details.mods-required')}
-                    </div>}
-                    {!hasGotPassword && <div className="container">
-                        <strong>{t('common.note')}</strong> {t('modals.server-details.pass-required')}
-                    </div>}
-                </div>}
-
-                <Carousel {...carouselOptions}>
-                    <Carousel.Item className="container-fluid">
-                        {/* <BBCodeRenderer bbcodeText={server.longServerDescription} /> */}
-                        <MarkdownRenderer>{server.longServerDescription}</MarkdownRenderer>
-                        {server.discordServerID && <div className="text-center mb-1">
-                            <Link className="btn btn-warning p-2 px-4" href={`https://discord.gg/${server.discordServerID}`} target="_blank">
-                                <strong>{t('modals.server-details.join-discord', { server })}</strong>
-                                <br />
-                                <small>{t('common.open-link')}</small>
-                            </Link>
-                        </div>}
-                    </Carousel.Item>
-
-                    <Carousel.Item className="container-fluid">
-                        {server?.serverPassword?.length && (
+    const modalOptions = { show, setShow, onCancel, headerText, showX: !shouldShowLogs };
+    return (
+        <DekCommonAppModal {...modalOptions}>
+            <DekDiv type="DekBody" className="d-block overflow-y-scroll" style={{ height }}>
+                <div className="p-3">
+                    {!shouldShowLogs && (
+                        <Fragment>
+                            <div className="ratio ratio-16x9">
+                                <Image src={server.splashURL} alt={server.serverName} className="d-block w-100" />
+                            </div>
                             <div className="row">
-                                <div className="card bg-secondary border border-secondary2 pt-3 px-3 pb-2 mb-3">
-                                    <input autoComplete="off"
-                                        type={showPassword ? 'text' : 'password'}
-                                        placeholder="Enter Server Password Here.."
-                                        className="form-control form-dark theme-bg mb-1"
-                                        style={{ width: '100%' }}
-                                        ref={passwordRef}
-                                    />
-                                    <div className="row px-2">
-                                        <div className="col">
-                                            <DekCheckbox
-                                                inline={true}
-                                                color="dark"
-                                                text="Show Server Password"
-                                                iconPos="left"
-                                                checked={showPassword}
-                                                onClick={setShowPassword}
-                                            />
-                                        </div>
-                                        <div className="col text-end">
-                                            <DekCheckbox
-                                                inline={true}
-                                                color="dark"
-                                                text="Remember Server Password"
-                                                // iconPos='left'
-                                                checked={rememberPassword}
-                                                onClick={setRememberPassword}
-                                            />
+                                <DekChoice
+                                    className="col py-3"
+                                    // disabled={true}
+                                    choices={serverpageTypes}
+                                    active={serverpageID}
+                                    onClick={(i, value) => {
+                                        console.log(`Setting Page: ${value}`);
+                                        setServerpageID(i);
+                                    }}
+                                />
+                                <div className="col-12 col-sm-4 col-md-3 pt-sm-3 pt-0 py-3">
+                                    <button className="btn btn-success px-4 w-100" onClick={onClickJoinServer}>
+                                        <strong>{t('modals.server-details.join')}</strong>
+                                        <br />
+                                    </button>
+                                </div>
+                            </div>
+                        </Fragment>
+                    )}
+
+                    {(!hasGotMods || !hasGotPassword) && (
+                        <div className="alert alert-danger text-center">
+                            {!hasGotMods && (
+                                <div className="container">
+                                    <strong>{t('common.note')}</strong> {t('modals.server-details.mods-required')}
+                                </div>
+                            )}
+                            {!hasGotPassword && (
+                                <div className="container">
+                                    <strong>{t('common.note')}</strong> {t('modals.server-details.pass-required')}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <Carousel {...carouselOptions}>
+                        <Carousel.Item className="container-fluid">
+                            {/* <BBCodeRenderer bbcodeText={server.longServerDescription} /> */}
+                            <MarkdownRenderer>{server.longServerDescription}</MarkdownRenderer>
+                            {server.discordServerID && (
+                                <div className="text-center mb-1">
+                                    <Link
+                                        className="btn btn-warning p-2 px-4"
+                                        href={`https://discord.gg/${server.discordServerID}`}
+                                        target="_blank"
+                                    >
+                                        <strong>{t('modals.server-details.join-discord', { server })}</strong>
+                                        <br />
+                                        <small>{t('common.open-link')}</small>
+                                    </Link>
+                                </div>
+                            )}
+                        </Carousel.Item>
+
+                        <Carousel.Item className="container-fluid">
+                            {server?.serverPassword?.length && (
+                                <div className="row">
+                                    <div className="card bg-secondary border border-secondary2 pt-3 px-3 pb-2 mb-3">
+                                        <input
+                                            autoComplete="off"
+                                            type={showPassword ? 'text' : 'password'}
+                                            placeholder="Enter Server Password Here.."
+                                            className="form-control form-dark theme-bg mb-1"
+                                            style={{ width: '100%' }}
+                                            ref={passwordRef}
+                                        />
+                                        <div className="row px-2">
+                                            <div className="col">
+                                                <DekCheckbox
+                                                    inline={true}
+                                                    color="dark"
+                                                    text="Show Server Password"
+                                                    iconPos="left"
+                                                    checked={showPassword}
+                                                    onClick={setShowPassword}
+                                                />
+                                            </div>
+                                            <div className="col text-end">
+                                                <DekCheckbox
+                                                    inline={true}
+                                                    color="dark"
+                                                    text="Remember Server Password"
+                                                    // iconPos='left'
+                                                    checked={rememberPassword}
+                                                    onClick={setRememberPassword}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        <div className="row">
-                            {Object.keys(server).sort().map((key, i) => {
-                                if (HIDDEN_SERVER_DATA_KEYS.includes(key)) return null;
-                                return <div key={i} className="col-12 col-md-6">
-                                    <div className="row">
-                                        <div className="col-6">
-                                            <strong>{key}</strong>
-                                        </div>
-                                        <div className="col-6 text-end">
-                                            {ensureEntryValueType(server[key]) || '???'}
-                                        </div>
+                            <div className="row">
+                                {Object.keys(server)
+                                    .sort()
+                                    .map(
+                                        (
+                                            key: keyof ServerListing,
+                                            i: number
+                                        ): ReactElement<HTMLAttributes<HTMLDivElement>> | null => {
+                                            if (HIDDEN_SERVER_DATA_KEYS.has(key)) return null;
+                                            return (
+                                                <div key={i} className="col-12 col-md-6">
+                                                    <div className="row">
+                                                        <div className="col-6">
+                                                            <strong>{key}</strong>
+                                                        </div>
+                                                        <div className="col-6 text-end">
+                                                            {ensureEntryValueType(server[key]) || '???'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                    )}
+                            </div>
+                        </Carousel.Item>
+
+                        <Carousel.Item className="container-fluid">
+                            {shouldShowLogs && (
+                                <div className="m-0 p-3" ref={logRef}>
+                                    <pre className="m-0 p-2">{logMessages.join('\n')}</pre>
+                                </div>
+                            )}
+                            {!shouldShowLogs && (
+                                <Fragment>
+                                    {servermodFiles.map(({ file, mod }, i) => {
+                                        return <ModFileCard key={i} mod={mod} file={file} />;
+                                    })}
+                                    <div className="text-center mb-1">
+                                        <button className="btn btn-success p-2 px-4" onClick={onInstallServerModList}>
+                                            <strong>{t('modals.server-details.install-mods', { server })}</strong>
+                                            <br />
+                                            <small>{t('modals.server-details.install-note')}</small>
+                                        </button>
                                     </div>
-                                </div>;
-                            })}
-                        </div>
-                    </Carousel.Item>
-
-                    <Carousel.Item className="container-fluid">
-                        {shouldShowLogs && <div className="m-0 p-3" ref={logRef}>
-                            <pre className="m-0 p-2">{logMessages.join('\n')}</pre>
-                        </div>}
-                        {!shouldShowLogs && <React.Fragment>
-                            {servermodFiles.map(({ file, mod }, i) => {
-                                return <ModFileCard key={i} mod={mod} file={file} />;
-                            })}
-                            <div className="text-center mb-1">
-                                <button className="btn btn-success p-2 px-4" onClick={onInstallServerModList}>
-                                    <strong>{t('modals.server-details.install-mods', { server })}</strong>
-                                    <br />
-                                    <small>{t('modals.server-details.install-note')}</small>
-                                </button>
-                            </div>
-                        </React.Fragment>}
-                    </Carousel.Item>
-                </Carousel>
-            </div>
-        </div>
-    </DekCommonAppModal>;
+                                </Fragment>
+                            )}
+                        </Carousel.Item>
+                    </Carousel>
+                </div>
+            </DekDiv>
+        </DekCommonAppModal>
+    );
 }

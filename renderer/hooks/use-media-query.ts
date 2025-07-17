@@ -4,17 +4,17 @@
 ########################################
 */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-const useMediaQuery = (query) => {
-    const [matches, setMatches] = useState(false);
+const useMediaQuery = (query: string): boolean => {
+    const [matches, setMatches] = useState<boolean>(false);
 
-    useEffect(() => {
-        const media = window.matchMedia(query);
+    useEffect((): VoidFunction => {
+        const media: MediaQueryList = window.matchMedia(query);
         if (media.matches !== matches) setMatches(media.matches);
-        const listener = () => setMatches(media.matches);
+        const listener = (): void => setMatches(media.matches);
         window.addEventListener('resize', listener);
-        return () => window.removeEventListener('resize', listener);
+        return (): void => window.removeEventListener('resize', listener);
     }, [matches, query]);
 
     return matches;

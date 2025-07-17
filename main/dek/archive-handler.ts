@@ -5,43 +5,80 @@
 * Handles zip/rar archives
 */
 // import { app } from "electron";
-import DEAP from "./deap";
+import { EventEmitter } from 'node:events';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import type { Stream } from 'node:stream';
 
-import path from 'path';
-import fs from 'fs/promises';
+// import SevenZip from '7zip-min';
+import type { SevenZipEntry } from '@main/dek/7zip-min-override';
+import SevenZip from '@main/dek/7zip-min-override';
+import DEAP from '@main/dek/deap';
+import type { PromiseReject, PromiseResolve, PromiseTypeFunction } from '@typed/common';
+import type { IZipEntry } from 'adm-zip';
 import AdmZip from 'adm-zip'; // for de-zip
+import type { ArcFile, ArcFiles, Extractor } from 'node-unrar-js';
 import { createExtractorFromData } from 'node-unrar-js'; // for de-rar
-// import SevenZip from '7zip-min'; 
-import SevenZip from './7zip-min-override'; 
 
-import EventEmitter from "events";
+export declare type ArchiveEntryData =
+    | string
+    | NodeJS.ArrayBufferView
+    | Iterable<string | NodeJS.ArrayBufferView>
+    | AsyncIterable<string | NodeJS.ArrayBufferView>
+    | Stream;
+export declare interface ArchiveEntry {
+    entryName: string;
+    outputPath?: string;
+    isDirectory: boolean;
+    size: number;
+    getData: PromiseTypeFunction<Awaited<ArchiveEntryData>>;
+}
 
+// eslint-disable-next-line unicorn/prefer-event-target
 class ArchiveHandler extends EventEmitter {
-    constructor(filePath) {
+    /** @type {string} */
+    filePath: string;
+    /** @type {string} */
+    extension: string;
+    /** @type {ArchiveEntry[]} */
+    entries: ArchiveEntry[];
+
+    /** @param {string} filePath */
+    constructor(filePath: string) {
         super();
+        /** @type {string} */
         this.filePath = filePath;
+        /** @type {string} */
         this.extension = path.extname(filePath).toLowerCase();
+        /** @type {ArchiveEntry[]} */
         this.entries = [];
     }
 
-    async _loadEntries() {
+    /** @returns {Promise<void>} */
+    async _loadEntries(): Promise<void> {
         try {
-            if (this.extension === '.zip') {
-                this._loadZipEntries();
-            } else if (this.extension === '.rar') {
-                await this._loadRarEntries();
-            } else if (this.extension === '.7z') {
-                await this._load7zEntries();
-            } else {
-                throw new Error('Unsupported file format');
+            switch (this.extension) {
+                case '.zip':
+                    this._loadZipEntries();
+                    break;
+                case '.rar':
+                    await this._loadRarEntries();
+                    break;
+                case '.7z':
+                    await this._load7zEntries();
+                    break;
+                default:
+                    throw new Error('Unsupported file format');
             }
         } catch (error) {
             console.error(error);
         }
     }
 
-    _loadZipEntries() {
-        const zip = new AdmZip(this.filePath);
+    /** @returns {void} */
+    _loadZipEntries(): void {
+        /** @type {AdmZip} */
+        const zip: AdmZip = new AdmZip(this.filePath);
         // this.entries = zip.getEntries().map(entry => ({
         //     entryName: entry.entryName,
         //     isDirectory: entry.isDirectory,
@@ -50,116 +87,149 @@ class ArchiveHandler extends EventEmitter {
         // }));
 
         // Initialize a set to track all directories
-        const directories = new Set();
+        /** @type {Set<string>} */
+        const directories: Set<string> = new Set();
 
         // Map entries and infer directories from file paths
-        this.entries = zip.getEntries().map(entry => {
-            const entryName = entry.entryName;
+        this.entries = zip.getEntries().map((entry: IZipEntry): ArchiveEntry => {
+            /** @type {string} */
+            const entryName: string = entry.entryName;
 
             // Add parent directories for each entry
-            const parts = entryName.split("/");
-            for (let i = 1; i < parts.length; i++) {
-                directories.add(parts.slice(0, i).join("/") + "/");
+            /** @type {string[]} */
+            const parts: string[] = entryName.split('/');
+            for (let i: number = 1; i < parts.length; i++) {
+                directories.add(parts.slice(0, i).join('/') + '/');
             }
 
             return {
-                entryName,
+                entryName: entryName,
                 isDirectory: entry.isDirectory,
                 size: entry.header.size,
-                getData: () => entry.getData(),
+                // eslint-disable-next-line @typescript-eslint/require-await
+                getData: async (): Promise<Buffer<ArrayBufferLike>> => entry.getData(),
             };
         });
 
         // Add explicit directory entries
         for (const dir of directories) {
-            if (this.entries.some(e => e.entryName === dir)) continue;
+            if (this.entries.some((e: ArchiveEntry): boolean => e.entryName === dir)) continue;
             this.entries.push({
                 entryName: dir,
                 isDirectory: true,
                 size: 0,
-                getData: () => Buffer.alloc(0), // Empty data for directories
+                // eslint-disable-next-line @typescript-eslint/require-await
+                getData: async (): Promise<Buffer<ArrayBuffer>> => Buffer.alloc(0), // Empty data for directories
             });
         }
 
         // Sort entries for consistent order (optional)
-        this.entries.sort((a, b) => a.entryName.localeCompare(b.entryName));
+        this.entries.sort((a: ArchiveEntry, b: ArchiveEntry): number => a.entryName.localeCompare(b.entryName));
     }
 
     // https://www.npmjs.com/package/node-unrar-js
-    async _loadRarEntries() {
-        const filedata = await fs.readFile(this.filePath);
-        const buffer = Uint8Array.from(filedata).buffer;
-        const extractor = await createExtractorFromData({data: buffer});
+    /** @returns {Promise<void>} */
+    async _loadRarEntries(): Promise<void> {
+        /** @type {Buffer<ArrayBufferLike>} */
+        const filedata: Buffer<ArrayBufferLike> = await readFile(this.filePath);
+        /** @type {ArrayBuffer} */
+        const buffer: ArrayBuffer = Uint8Array.from(filedata).buffer;
+        /** @type {Extractor<Uint8Array>} */
+        const extractor: Extractor<Uint8Array> = await createExtractorFromData({ data: buffer });
         // const list = extractor.getFileList();
         // const listArcHeader = list.arcHeader; // archive header
-        // const fileHeaders = [...list.fileHeaders]; // load the file headers        
-        const extracted = extractor.extract();
-        const files = [...extracted.files]; //load the files
+        // const fileHeaders = [...list.fileHeaders]; // load the file headers
+        /** @type {ArcFiles<Uint8Array<ArrayBufferLike>>} */
+        const extracted: ArcFiles<Uint8Array<ArrayBufferLike>> = extractor.extract();
+        /** @type {ArcFile<Uint8Array<ArrayBufferLike>>[]} */
+        const files: ArcFile<Uint8Array<ArrayBufferLike>>[] = [...extracted.files]; //load the files
 
-        this.entries = files.map(entry => ({
-            entryName: entry.fileHeader.name,
-            isDirectory: entry.fileHeader.flags.directory,
-            size: entry.fileHeader.unpSize,
-            getData: () => entry.extraction,
-        }));
+        this.entries = files.map(
+            (entry: ArcFile<Uint8Array<ArrayBufferLike>>): ArchiveEntry => ({
+                entryName: entry.fileHeader.name,
+                isDirectory: entry.fileHeader.flags.directory,
+                size: entry.fileHeader.unpSize,
+                // eslint-disable-next-line @typescript-eslint/require-await
+                getData: async (): Promise<Uint8Array<ArrayBufferLike>> => {
+                    if (!entry.extraction) throw new Error('No extraction data found.');
+                    return entry.extraction;
+                },
+            })
+        );
     }
 
-
-    async _load7zEntries() {
-        return new Promise((resolve, reject) => {
-            const entries = [];
-            SevenZip.list(this.filePath, (err, result) => {
+    /** @returns {Promise<void>} */
+    async _load7zEntries(): Promise<void> {
+        return new Promise<void>((resolve: PromiseResolve<void>, reject: PromiseReject): void => {
+            /** @type {ArchiveEntry[]} */
+            const entries: ArchiveEntry[] = [];
+            SevenZip.list(this.filePath, (err: Error | null, result: SevenZipEntry[] | null | undefined): void => {
                 if (err) return reject(err);
-    
-                result.forEach((entry) => {
+                if (!result) return reject(new Error('No results found.'));
+
+                for (const entry of result) {
                     entries.push({
                         entryName: entry.attr.includes('D') ? `${entry.name}/` : entry.name,
                         isDirectory: entry.attr.includes('D'),
-                        size: entry.size,
-                        getData: async () => await this._extract7zEntry(entry.name),
+                        size: Number.parseInt(entry.size, 10),
+                        getData: async (): Promise<Buffer<ArrayBufferLike>> => await this._extract7zEntry(entry.name),
                     });
-                });
-    
+                }
+
                 this.entries = entries;
                 resolve();
             });
         });
     }
-    
-    async _extract7zEntry(entryName) {
-        return new Promise((resolve, reject) => {
-            const tempOutputDir = path.join(DEAP.app.getPath('userData'), 'TempExtract');
-            const tempFilePath = path.join(tempOutputDir, entryName);
-    
-            SevenZip.unpack(this.filePath, tempOutputDir, (err) => {
-                if (err) {
-                    DEAP.logger.error('Error extracting 7z entry:', err);
-                    return reject(err);
-                }
-    
-                fs.readFile(tempFilePath)
-                    .then((buffer) => {
-                        resolve(buffer);
-                        // Optionally clean up temp files here if needed
-                        fs.unlink(tempFilePath);
-                    })
-                    .catch(reject);
-            });
 
-        });
+    /**
+     * @param {string} entryName
+     * @returns {Promise<Buffer<ArrayBufferLike>>}
+     */
+    async _extract7zEntry(entryName: string): Promise<Buffer<ArrayBufferLike>> {
+        return new Promise<Buffer<ArrayBufferLike>>(
+            (resolve: PromiseResolve<Buffer<ArrayBufferLike>>, reject: PromiseReject): void => {
+                /** @type {string} */
+                const tempOutputDir: string = path.join(DEAP.app.getPath('userData'), 'TempExtract');
+                /** @type {string} */
+                const tempFilePath: string = path.join(tempOutputDir, entryName);
+
+                SevenZip.unpack(this.filePath, tempOutputDir, (err: Error | null): void => {
+                    if (err) {
+                        void DEAP.logger?.error('Error extracting 7z entry:', err);
+                        return reject(err);
+                    }
+
+                    readFile(tempFilePath)
+                        .then((buffer: Buffer<ArrayBufferLike>): void => {
+                            resolve(buffer);
+                            // Optionally clean up temp files here if needed
+                            void unlink(tempFilePath);
+                        })
+                        .catch(reject);
+                });
+            }
+        );
     }
 
-    async getEntries() {
+    /** @returns {Promise<ArchiveEntry[]>} */
+    async getEntries(): Promise<ArchiveEntry[]> {
         if (this.entries.length === 0) {
             await this._loadEntries();
         }
         return this.entries;
     }
 
-    async extractEntry(entry, outputPath) {
+    /**
+     * @param {ArchiveEntry} entry
+     * @param {string} outputPath
+     * @returns {Promise<void>}
+     */
+    async extractEntry(entry: ArchiveEntry, outputPath: string): Promise<void> {
         // if (!!!entry.outputPath) return;
 
-        const outputFilePath = path.join(outputPath, entry.outputPath ?? entry.entryName);
+        /** @type {string} */
+        const outputFilePath: string = path.join(outputPath, entry.outputPath ?? entry.entryName);
         console.log('extracting:', entry.entryName, 'to:', outputFilePath);
 
         this.emit('extracting', {
@@ -168,16 +238,23 @@ class ArchiveHandler extends EventEmitter {
         });
 
         if (entry.isDirectory) {
-            await fs.mkdir(outputFilePath, { recursive: true });
+            await mkdir(outputFilePath, { recursive: true });
         } else {
-            await fs.mkdir(path.dirname(outputFilePath), { recursive: true });
-            await fs.writeFile(outputFilePath, await entry.getData());
+            await mkdir(path.dirname(outputFilePath), { recursive: true });
+            await writeFile(outputFilePath, await entry.getData());
         }
     }
 
-    async extractAllTo(outputPath, overwrite = true, ignores = []) {
+    /**
+     * @param {string} outputPath
+     * @param {boolean} [_overwrite=true]
+     * @param {string[]} [ignores=[]]
+     * @returns {Promise<void>}
+     */
+    async extractAllTo(outputPath: string, _overwrite: boolean = true, ignores: string[] = []): Promise<void> {
         console.log('extracting to:', outputPath);
-        const entries = await this.getEntries();
+        /** @type {ArchiveEntry[]} */
+        const entries: ArchiveEntry[] = await this.getEntries();
         // console.log('got entries:', entries);
         for (const entry of entries) {
             if (ignores.includes(entry.entryName)) {

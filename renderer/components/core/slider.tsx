@@ -4,9 +4,23 @@
 ########################################
 */
 
+import type { CommonIcon } from '@config/common-icons';
 import { motion } from 'framer-motion';
+import type { ReactElement, SVGProps } from 'react';
 
-export const icon_props = {
+export declare interface MotionSliderProps {
+    Icon: CommonIcon;
+    // delay?: number;
+    xdir?: 'right' | 'left' | undefined;
+    ydir?: 'down' | 'up' | undefined;
+    xmove?: number | undefined;
+    ymove?: number | undefined;
+    header?: string | undefined;
+    text?: string | undefined;
+    small?: string | undefined;
+}
+
+export const icon_props: SVGProps<SVGElement> = {
     fill: 'currentColor',
     height: '7rem',
     width: '7rem',
@@ -18,19 +32,17 @@ export const icon_props = {
     },
 };
 
-export default function MotionSlider(props) {
-    const {
-        Icon,
-        // delay = 0,
-        xdir = 'right',
-        ydir = 'down',
-        xmove = xdir === 'right' ? 128 : -128,
-        ymove = ydir === 'down' ? 64 : -64,
-        header = '',
-        text = '',
-        small = '',
-    } = props;
-
+export default function MotionSlider({
+    Icon,
+    // delay = 0,
+    xdir = 'right',
+    ydir = 'down',
+    xmove = xdir === 'right' ? 128 : -128,
+    ymove = ydir === 'down' ? 64 : -64,
+    header = '',
+    text = '',
+    small = '',
+}: MotionSliderProps): ReactElement<MotionSliderProps> {
     const delay = 0.25;
 
     return (
@@ -39,13 +51,15 @@ export default function MotionSlider(props) {
             animate={{ x: 0 }}
             transition={{ duration: 1, delay }}
             // whileInView={{opacity: 1}}
-            className='col-12 col-md-6 col-lg-4 my-2'>
+            className="col-12 col-md-6 col-lg-4 my-2"
+        >
             <motion.div
                 initial={{ y: ymove, opacity: 0 }}
                 // animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay }}
                 whileInView={{ y: 0, opacity: 1 }}
-                className=''>
+                className=""
+            >
                 <Icon {...icon_props} />
             </motion.div>
 
@@ -55,7 +69,8 @@ export default function MotionSlider(props) {
                     // animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.5, delay }}
                     whileInView={{ y: 0, opacity: 1 }}
-                    className=''>
+                    className=""
+                >
                     <h4>{header}</h4>
                 </motion.div>
             )}
@@ -65,8 +80,9 @@ export default function MotionSlider(props) {
                     // animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.5, delay }}
                     whileInView={{ y: 0, opacity: 1 }}
-                    className=''>
-                    <p className='mb-0'>{text}</p>
+                    className=""
+                >
+                    <p className="mb-0">{text}</p>
                 </motion.div>
             )}
             {!!small && (
@@ -75,7 +91,8 @@ export default function MotionSlider(props) {
                     // animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.5, delay }}
                     whileInView={{ y: 0, opacity: 1 }}
-                    className=''>
+                    className=""
+                >
                     <small>
                         <strong>{small}</strong>
                     </small>

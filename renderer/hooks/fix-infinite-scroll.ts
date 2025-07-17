@@ -1,4 +1,5 @@
-'use client';/*
+'use client';
+/*
 ########################################
 # PalHUB::Client by dekitarpg@gmail.com
 ########################################
@@ -6,16 +7,21 @@
 
 import { useCallback, useEffect, useMemo } from 'react';
 
-function useFixMissingScroll({hasMoreItems,fetchMoreItems,query = 'main-body'}) {
-    const mainElement = useMemo(() => document?.querySelector(query), []);
-    const fetchCb = useCallback(() => {
+export declare interface UseFixMissingScrollProps {
+    hasMoreItems: boolean;
+    fetchMoreItems: VoidFunction;
+    query?: string;
+}
+
+function useFixMissingScroll({ hasMoreItems, fetchMoreItems, query = 'main-body' }: UseFixMissingScrollProps): void {
+    const mainElement: Element | null = useMemo((): Element | null => document?.querySelector(query), []);
+    /** @returns {void} */
+    const fetchCb: VoidFunction = useCallback((): void => {
         fetchMoreItems();
     }, [fetchMoreItems]);
-    useEffect(() => {
-        const hasScroll = mainElement
-            ? mainElement.scrollHeight > mainElement.clientHeight
-            : false;
-        if (!hasScroll && hasMoreItems) setTimeout(() => fetchCb(), 100);
+    useEffect((): void => {
+        const hasScroll: boolean = mainElement ? mainElement.scrollHeight > mainElement.clientHeight : false;
+        if (!hasScroll && hasMoreItems) setTimeout((): void => fetchCb(), 100);
     }, [hasMoreItems, fetchCb, mainElement]);
 }
 

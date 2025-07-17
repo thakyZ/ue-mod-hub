@@ -4,6 +4,12 @@
 ########################################
 */
 import MarkdownPageWrapper from '@components/markdown/wrapper';
-export default function TermsOfServicePage({ modals }) {
-    return <MarkdownPageWrapper {...{ tagline: "/terms.head", filename: 'terms' }} />;
+import { JSX } from 'react';
+
+export declare interface TermsOfServicePageProps {
+    modals: unknown;
+}
+
+export default function TermsOfServicePage({ modals: _modals }: TermsOfServicePageProps): JSX.Element {
+    return <MarkdownPageWrapper {...{ tagline: '/terms.head', filename: 'terms' }} />;
 }

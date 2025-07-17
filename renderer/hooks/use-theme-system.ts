@@ -3,12 +3,13 @@
 # PalHUB::Client by dekitarpg@gmail.com
 ########################################
 */
-import { parse } from 'dotenv';
-import { useEffect, useState, useCallback } from 'react';
+// import { parse } from 'dotenv';
+import { parseIntSafe } from '@hooks/use-common-checks';
+import { useCallback, useEffect, useState } from 'react';
 
 // theme files should be located in /public/themes
 export const THEMES = [
-    'modhub', 
+    'modhub',
     'ff7',
     'mako',
     'pals',
@@ -16,7 +17,7 @@ export const THEMES = [
     'khakii',
     'hogleg',
     'stellar',
-    
+
     '1',
     '2',
     '3',
@@ -26,7 +27,7 @@ export const THEMES = [
     '7',
     '8',
     '9',
-    
+
     // 'vivid1',
     // 'dek-dark',
     // 'dek-light',
@@ -37,61 +38,68 @@ export const THEMES = [
     // 'nature4',
     // 'purple1',
     // 'purple2',
-];
+] as const;
 
+export declare type Themes = (typeof THEMES)[number];
+export declare type BackgroundOpacityConstraint = 0 | 1 | 2;
 
-export default function useThemeSystem(game_id) {
-    // const [theme_id, setTempThemeID] = useState(parseInt(base_theme_id));
-    const [theme_id, setTempThemeID] = useState(0);
-    const [bg_opac, setTempBgOpac] = useState(0);
-    const [bg_id, setTempBgID] = useState(0);
+export declare interface UseThemeSystemReturn {
+    theme_id: number;
+    setThemeID: (newtheme: Themes) => number | null;
+    bg_id: number;
+    setBgID: (newbg: number) => number | null;
+    bg_opac: BackgroundOpacityConstraint;
+    setBgOpac: (newopac: BackgroundOpacityConstraint) => BackgroundOpacityConstraint | null;
+}
 
-    const setThemeID = useCallback((newtheme) => {
+export default function useThemeSystem(_game_id: string): UseThemeSystemReturn {
+    // const [theme_id, setTempThemeID] = useState(Number.parseInt(base_theme_id));
+    const [theme_id, setTempThemeID] = useState<number>(0);
+    const [bg_opac, setTempBgOpac] = useState<BackgroundOpacityConstraint>(0);
+    const [bg_id, setTempBgID] = useState<number>(0);
+
+    const setThemeID = useCallback((newtheme: Themes): number | null => {
         if (typeof window === 'undefined') return null;
         if (!THEMES.includes(newtheme)) return null;
-        const new_id = THEMES.indexOf(newtheme);
-        localStorage.setItem('utheme-id', new_id);
+        const new_id: number = THEMES.indexOf(newtheme);
+        localStorage.setItem('utheme-id', new_id.toString());
         setTempThemeID(new_id);
         return new_id;
     }, []);
 
-    const setBgID = useCallback((newbg) => {
+    const setBgID = useCallback((newbg: number): number | null => {
         if (typeof window === 'undefined') return null;
         if (newbg < 0 || newbg >= 10) return null;
-        localStorage.setItem('utheme-bg', newbg);
+        localStorage.setItem('utheme-bg', newbg.toString());
         setTempBgID(newbg);
         return newbg;
     }, []);
 
-    const setBgOpac = useCallback((newopac) => {
+    const setBgOpac = useCallback((newopac: BackgroundOpacityConstraint): BackgroundOpacityConstraint | null => {
         if (typeof window === 'undefined') return null;
-        localStorage.setItem('utheme-bgopac', newopac);
+        localStorage.setItem('utheme-bgopac', newopac.toString());
         setTempBgOpac(newopac);
         return newopac;
     }, []);
 
-    useEffect(() => {
-        let base_theme_id = 0;
-        let base_theme_bg = 0;
-        let base_theme_opac = 0;
+    useEffect((): void => {
+        // prettier-ignore
+        const lockIntToBackgroundOpacityConstraint = (value: string | undefined | null): BackgroundOpacityConstraint | undefined =>
+            value ? Math.min(Math.max(parseIntSafe(value)!, 0), 2) as BackgroundOpacityConstraint | undefined : undefined;
+        let base_theme_id: number = 0;
+        let base_theme_bg: number = 0;
+        let base_theme_opac: BackgroundOpacityConstraint = 0;
         if (typeof window !== 'undefined') {
             // localStorage.setItem(key, value)
-            base_theme_id = window.localStorage.getItem('utheme-id') || 7;
-            base_theme_bg = window.localStorage.getItem('utheme-bg') || 0;
-            base_theme_opac = window.localStorage.getItem('utheme-bgopac') || 0;
+            base_theme_id = parseIntSafe(window.localStorage.getItem('utheme-id') ?? undefined) || 7;
+            base_theme_bg = parseIntSafe(window.localStorage.getItem('utheme-bg') ?? undefined) || 0;
+            base_theme_opac = lockIntToBackgroundOpacityConstraint(window.localStorage.getItem('utheme-bgopac')) || 0;
         }
-        setTempThemeID(parseInt(base_theme_id));
-        setTempBgID(parseInt(base_theme_bg));
+        setTempThemeID(base_theme_id);
+        setTempBgID(base_theme_bg);
         setTempBgOpac(base_theme_opac);
     }, []);
 
     // return theme_id and setter function for hook
-    return [
-        theme_id,
-        setThemeID,
-        bg_id,
-        setBgID,
-        bg_opac,
-        setBgOpac,
-    ];
+    return { theme_id, setThemeID, bg_id, setBgID, bg_opac, setBgOpac };
 }

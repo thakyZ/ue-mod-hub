@@ -4,95 +4,125 @@
 ########################################
 */
 
-import React from 'react';
-import useScreenSize from '@hooks/useScreenSize';
-import useLocalization from '@hooks/useLocalization';
-import replaceUe4ssIniKeyValue from 'utils/replaceIniKey';
+// import assert from 'node:assert';
+
+import type { AppLogger } from '@hooks/use-app-logger';
+import useAppLogger from '@hooks/use-app-logger';
+import type { CommonAppDataContextType, GameInformation } from '@hooks/use-common-checks';
+import useCommonChecks, { handleError } from '@hooks/use-common-checks';
+// import type { UseLocalizationReturn } from '@hooks/use-localization';
+// import useLocalization from '@hooks/use-localization';
+import type { UseScreenSizeReturn } from '@hooks/use-screen-size';
+import useScreenSize from '@hooks/use-screen-size';
+import type { Ue4ssSettingsFlat } from '@main/dek/game-map';
+import type { PromiseVoidFunction, UseStatePair } from '@typed/common';
+import type { DownloadFileEvent, ValidateGamePathReturnType } from '@typed/palhub';
+import replaceUe4ssIniKeyValue from '@utils/replace-ini-key';
 import wait from '@utils/wait';
-import useCommonChecks from '@hooks/useCommonChecks';
+import type { RendererIpcEvent } from 'electron-ipc-extended';
+import type { MutableRefObject, ReactElement } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-export default function UE4SSInstallProgress({ game, onComplete }) {
-    const { requiredModulesLoaded } = useCommonChecks();
-    const { t, tA } = useLocalization();
+export declare interface UE4SSInstallProgressProps {
+    game: GameInformation | null;
+    onComplete: PromiseVoidFunction;
+}
 
-    const { isDesktop } = useScreenSize();
-    const fullscreen = !isDesktop;
+export default function UE4SSInstallProgress({
+    game,
+    onComplete,
+}: UE4SSInstallProgressProps): ReactElement<UE4SSInstallProgressProps> {
+    const applog: AppLogger = useAppLogger('UE4SSInstallProgress');
+    const { requiredModulesLoaded }: CommonAppDataContextType = useCommonChecks();
+    // const { t, tA }: UseLocalizationReturn = useLocalization();
 
-    // const height = fullscreen ? 'calc(100vh - 182px)' : '352px';
-    // const height = fullscreen ? 'calc(100vh - 182px)' : 'calc(100vh / 4 * 2 + 26px)';
-    const height = fullscreen ? "calc(100vh - 96px)" : "calc(100vh / 4 * 2 + 26px)";
+    const { isDesktop }: UseScreenSizeReturn = useScreenSize();
+    const fullscreen: boolean = !isDesktop;
 
-    const logRef = React.useRef(null);
+    // const height: string = fullscreen ? 'calc(100vh - 182px)' : '352px';
+    // const height: string = fullscreen ? 'calc(100vh - 182px)' : 'calc(100vh / 4 * 2 + 26px)';
+    const height: string = fullscreen ? 'calc(100vh - 96px)' : 'calc(100vh / 4 * 2 + 26px)';
 
-    const [logMessages, setLogMessages] = React.useState([]);
+    const logRef: MutableRefObject<HTMLDivElement | null> = useRef<HTMLDivElement | null>(null);
 
-    const addLogMessage = (message) => {
-        setLogMessages((old) => [...old, message]);
+    const [logMessages, setLogMessages]: UseStatePair<string[]> = useState<string[]>([]);
+
+    const addLogMessage = (message: string) => {
+        setLogMessages((old: string[]): string[] => [...old, message]);
         if (logRef.current) {
-            setTimeout(() => (logRef.current.scrollTop = logRef.current.scrollHeight));
-            // logRef.current.scrollTop = logRef.current.scrollHeight;
+            setTimeout((): number | false => !!logRef.current && (logRef.current.scrollTop = logRef.current.scrollHeight));
         }
     };
 
-    const resetLogMessages = React.useCallback(() => {
+    const resetLogMessages: VoidFunction = (): void => {
         setLogMessages([]);
-    }, []);
+    };
 
-    const onFinished = React.useCallback(async () => {
-        await wait(2500);
-        await onComplete();
-        setTimeout(() => {
-            resetLogMessages();
-        }, 500);
+    const onFinished: VoidFunction = useCallback((): void => {
+        (async (resetLogMessages: VoidFunction, onComplete: PromiseVoidFunction): Promise<void> => {
+            await wait(2500);
+            await onComplete();
+            setTimeout((): void => {
+                resetLogMessages();
+            }, 500);
+        })(resetLogMessages, onComplete).catch((error: unknown) => handleError(error, applog));
     }, [resetLogMessages, onComplete]);
 
-
     // initialize the ue4ss installation's configuration
-    const setUe4ssDefaultSettings = React.useCallback(async () => {
-        if (!requiredModulesLoaded) return;
-        try {
-            addLogMessage('Setting UE4SS Default Settings');
+    const setUe4ssDefaultSettings: VoidFunction = useCallback((): void => {
+        (async (game: GameInformation | null, onFinished: VoidFunction): Promise<void> => {
+            if (!requiredModulesLoaded || !game) return;
+            try {
+                addLogMessage('Setting UE4SS Default Settings');
 
-            const game_data = await window.palhub('validateGamePath', game.path);
+                const game_data: ValidateGamePathReturnType = await window.palhub('validateGamePath', game.path);
+                if (game_data.type === '{invalid-path}') throw new Error(`Failed to validate game path at ${game.path}, got ${game_data.type}`, { cause: game_data });
+                if (game_data.type === '{UNKNOWN}') throw new Error(`Failed to validate game path at ${game.path}, got ${game_data.type}`, { cause: game_data });
+                if (!('ue4ss_root' in game_data)) throw new Error(`Failed to validate game path at ${game.path}, invalid type (Property 'ue4ss_root' does not exist in data)`, { cause: game_data });
+                const ini_path: string = await window.palhub('joinPath', game_data.ue4ss_root, 'UE4SS-settings.ini');
+                let updated_ini: string = (await window.palhub('readFile', ini_path, { encoding: 'utf8' })) as string;
 
-            const ini_path = await window.palhub('joinPath', game_data.ue4ss_root, 'UE4SS-settings.ini');
-            let updated_ini = await window.palhub('readFile', ini_path, { encoding: 'utf-8' });
-
-            const {settings} = game_data.map_data.platforms[game.launch_type].modloader.ue4ss;
-            for (const setting in settings) {
-                if (!Object.prototype.hasOwnProperty.call(settings, setting)) continue;
-                const [category, key] = setting.split('.');
-                updated_ini = replaceUe4ssIniKeyValue(updated_ini, category, key, settings[setting]);
-                addLogMessage(`Set ${setting} to ${settings[setting]}`);
+                const settings: Ue4ssSettingsFlat | undefined = game_data.map_data.platforms[game.launch_type]?.modloader
+                    ?.ue4ss?.settings as Ue4ssSettingsFlat | undefined;
+                if (!settings) return;
+                for (const setting of Object.keys(settings)) {
+                    if (!Object.prototype.hasOwnProperty.call(settings, setting)) continue;
+                    const [category, key] = setting.split('.');
+                    updated_ini = replaceUe4ssIniKeyValue(updated_ini, category!, key!, settings[setting]!);
+                    addLogMessage(`Set ${setting} to ${settings[setting]?.toString() ?? 'undefined'}`);
+                }
+                //  do any other configuration initialization changes here.
+                await window.palhub('writeFile', ini_path, updated_ini, { encoding: 'utf8' });
+                addLogMessage('Successfully updated UE4SS-Settings.ini');
+                onFinished();
+            } catch (error: unknown) {
+                console.error(error);
             }
-            //  do any other configuration initialization changes here.
-            await window.palhub('writeFile', ini_path, updated_ini, { encoding: 'utf-8' });
-            addLogMessage('Successfully updated UE4SS-Settings.ini');
-            onFinished();
-        } catch (error) {
-            console.error(error);
-        }
+        })(game, onFinished).catch((error: unknown) => handleError(error, applog));
     }, [game, onFinished]);
 
-    React.useEffect(() => {
+    useEffect((): void | VoidFunction => {
         if (!requiredModulesLoaded) return;
 
-        const processData = async (type, data) => {
+        type ProcessDataType = 'download' | 'extract' | 'delete' | 'error' | 'complete' | 'uninstalled';
+        const processData = (_event: RendererIpcEvent, type: ProcessDataType, data: DownloadFileEvent | string) => {
             switch (type) {
                 case 'download': {
-                    addLogMessage(`Downloading: ${data.filename} - ${data.percentage}%`);
+                    addLogMessage(
+                        `Downloading: ${(data as DownloadFileEvent).filename} - ${(data as DownloadFileEvent).percentage}%`
+                    );
                     break;
                 }
                 case 'extract': {
-                    addLogMessage(`Extracting: ${data.outputPath}`);
+                    addLogMessage(`Extracting: ${(data as DownloadFileEvent).outputPath}`);
                     break;
                 }
                 case 'delete': {
-                    addLogMessage(`Deleting: ${data}`);
+                    addLogMessage(`Deleting: ${data as string}`);
                     break;
                 }
                 case 'error': {
-                    addLogMessage(data);
+                    addLogMessage(data as string);
                     break;
                 }
                 case 'complete': {
@@ -105,15 +135,17 @@ export default function UE4SSInstallProgress({ game, onComplete }) {
                     onFinished();
                 }
             }
-        }
+        };
 
         const removeDataHandler = window.ipc.on('ue4ss-process', processData);
-        return () => removeDataHandler();
+        return (): void => removeDataHandler();
     }, [onFinished]);
 
     // return <pre className="m-0 p-2 text-start">{logMessages.join('\n')}</pre>;
 
-    return <div className="overflow-auto m-0 p-3" style={{ height }} ref={logRef}>
-        <pre className="m-0 p-2 text-start">{logMessages.join('\n')}</pre>
-    </div>;
+    return (
+        <div className="overflow-auto m-0 p-3" style={{ height }} ref={logRef}>
+            <pre className="m-0 p-2 text-start">{logMessages.join('\n')}</pre>
+        </div>
+    );
 }

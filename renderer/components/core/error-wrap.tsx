@@ -1,48 +1,68 @@
-import react, { Component, cloneElement, Children } from "react";
-import useAppLogger from '@hooks/useAppLogger';
+// import useAppLogger from '@hooks/use-app-logger';
+import type { ThemeController } from '@components/core/layout';
+import type { ErrorInfo, HTMLAttributes, ReactElement } from 'react';
+import { Children, cloneElement, Component, Fragment } from 'react';
 
-export class ErrorWrapper extends Component {
-    constructor(props) {
+export declare interface ErrorWrapperProps extends Pick<HTMLAttributes<HTMLDivElement>, 'children'> {
+    onError?: (error: Error, info: ErrorInfo) => void;
+    ThemeController?: ThemeController;
+    modals?: number | number[];
+    children?: ReactElement | ReactElement[] | undefined;
+}
+
+export declare interface ErrorWrapperState<T extends Error> {
+    hasError: boolean;
+    error?: T | null | undefined;
+}
+
+export class ErrorWrapper extends Component<ErrorWrapperProps, ErrorWrapperState<Error>> {
+    constructor(props: ErrorWrapperProps) {
         super(props);
         this.state = { hasError: false, error: null };
     }
 
-    static getDerivedStateFromError(error) {
+    static getDerivedStateFromError<T extends Error>(error?: T): ErrorWrapperState<T> {
         return { hasError: true, error };
     }
 
-    componentDidCatch(error, info) {
-        console.error("Caught by ErrorWrapper:", error);
+    override componentDidCatch(error: Error, info: ErrorInfo): void {
+        console.error('Caught by ErrorWrapper:', error);
         if (this.props.onError) {
             this.props.onError(error, info);
         }
     }
 
-    render() {
-
-        const onOpenDevTools = () => {
+    override render(): ReactElement {
+        const onOpenDevTools: VoidFunction = (): void => {
             if (window.ipc) {
-                window.ipc.invoke('open-console-window', 'main');
+                void window.ipc.invoke('open-console-window', 'main');
             } else {
-                console.warn("openDevTools is not available in this context.");
+                console.warn('openDevTools is not available in this context.');
             }
         };
         if (this.state.hasError) {
-            return <div className="container text-start text-white py-5 px-2">
-                <h2 className="text-warning">Something went wrong.</h2>
-                <pre className="p-3 bg-dark">{this.state.error?.message}</pre>
-                <pre className="p-3 bg-dark">{this.state.error?.stack}</pre>
-                <button onClick={onOpenDevTools} className="btn btn-secondary">
-                    Open Browser Console for More Details
-                </button>
-            </div>
+            return (
+                <div className="container text-start text-white py-5 px-2">
+                    <h2 className="text-warning">Something went wrong.</h2>
+                    <pre className="p-3 bg-dark">{this.state.error?.message}</pre>
+                    <pre className="p-3 bg-dark">{this.state.error?.stack}</pre>
+                    <button onClick={onOpenDevTools} className="btn btn-secondary">
+                        Open Browser Console for More Details
+                    </button>
+                </div>
+            );
         }
-        return <react.Fragment>
-            {Children.map(this.props.children, (child) => cloneElement(child, { 
-                ThemeController: this.props.ThemeController,
-                modals: this.props.modals, 
-            }))}
-        </react.Fragment>
+        return (
+            <Fragment>
+                {Children.map(this.props.children, (child: ReactElement | undefined): ReactElement | undefined => {
+                    if (!child) return undefined;
+                    return cloneElement(child, {
+                        ThemeController: this.props.ThemeController,
+                        modals: this.props.modals,
+                    });
+                })}
+            </Fragment>
+        );
         // return this.props.children;
     }
 }

@@ -3,37 +3,53 @@
 # PalHUB::Client by dekitarpg@gmail.com
 ########################################
 */
-import React from 'react';
+import BBCode, { Tag } from 'bbcode-to-react';
 import DOMPurify from 'dompurify';
-import BBCode, {Tag} from 'bbcode-to-react';
+import React from 'react';
+
+export declare interface BBCodeRendererProps {
+    bbcodeText: string;
+}
 
 class SizeTag extends Tag {
+    override params: { size: 1 | 2 | 3 | 4 | 5 | 6 };
+    constructor(size: 1 | 2 | 3 | 4 | 5 | 6, renderer: unknown, settings: unknown) {
+        super(renderer, settings);
+        this.params = { size };
+    }
     // 1=small, 6=large
-    toHTML() {
-        const size_map = {
+    override toHTML(): string[] {
+        const size_map: Record<number, string> = {
             1: '8px',
             2: '12px',
             3: '16px',
             4: '18px',
             5: '24px',
             6: '32px',
-        }
-        const size = size_map[this.params.size];
-        return `<span style="font-size: ${size};">${this.getContent()}</span>`;
+        };
+        const size: string = size_map[this.params.size]!;
+        return [`<span style="font-size: ${size};">${this.getContent()}</span>`];
     }
     // toReact() {}
 }
 
 class ImageTag extends Tag {
-    toHTML() {
-        return `<img class="img-fluid" src="${this.getContent()}" />`;
+    override toHTML(): string[] {
+        return [`<img class="img-fluid" src="${this.getContent()}" />`];
     }
     // toReact() {}
 }
 
 class LinkTag extends Tag {
-    toHTML() {
-        return `<a class="hover-dark hover-warning" target="_blank" rel="noopener noreferrer" href="${this.params.url}">${this.getContent()}</a>`;
+    override params: { url: string };
+    constructor(url: string, renderer: unknown, settings: unknown) {
+        super(renderer, settings);
+        this.params = { url };
+    }
+    override toHTML(): string[] {
+        return [
+            `<a class="hover-dark hover-warning" target="_blank" rel="noopener noreferrer" href="${this.params.url}">${this.getContent()}</a>`,
+        ];
     }
 }
 
@@ -41,28 +57,25 @@ BBCode.registerTag('size', SizeTag); // add custom size tag
 BBCode.registerTag('img', ImageTag); // add custom image tag
 BBCode.registerTag('url', LinkTag); // add custom link tag
 
-function decodeHTMLEntities(text) {
-    const textarea = document.createElement('textarea');
+function decodeHTMLEntities(text: string): string {
+    const textarea: HTMLTextAreaElement = document.createElement('textarea');
     textarea.innerHTML = text;
     return textarea.value;
 }
 
-function sanitizeBB(bbcodeText) {
+function sanitizeBB(bbcodeText: string): string {
     // remove anything malicious
     bbcodeText = DOMPurify.sanitize(bbcodeText);
     // remove <br /> tags and replace them with newlines
-    bbcodeText = bbcodeText.replace(/<br\s*\/?>/gi, '');
+    bbcodeText = bbcodeText.replaceAll(/<br\s*\/?>/gi, '');
     // decode HTML entities
     bbcodeText = decodeHTMLEntities(bbcodeText);
     // convert BBCode to html
-    bbcodeText = BBCode.toHTML(bbcodeText);
+    bbcodeText = BBCode.toHTML(bbcodeText)[0]!;
     // return the formatted bbcodeText
-    return bbcodeText;
+    return bbcodeText ?? '';
 }
 
-export default function BBCodeRenderer({ bbcodeText }) {
-    return <div className='bbcode-div mb-3' dangerouslySetInnerHTML={{
-        __html: BBCode.toReact(sanitizeBB(bbcodeText))
-    }}/>;
+export default function BBCodeRenderer({ bbcodeText }: BBCodeRendererProps) {
+    return <div className="bbcode-div mb-3" children={BBCode.toReact(sanitizeBB(bbcodeText))} />;
 }
-

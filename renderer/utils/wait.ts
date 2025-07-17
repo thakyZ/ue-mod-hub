@@ -3,6 +3,8 @@
 # PalHUB::Client by dekitarpg@gmail.com
 ########################################
 */
-export default async function wait(milliseconds = 1000) {
-    return new Promise((r) => setTimeout(r, milliseconds));
+import type { PromiseResolve } from '@typed/common';
+
+export default async function wait(milliseconds: number = 1000): Promise<void> {
+    return new Promise<void>((r: PromiseResolve<void>): NodeJS.Timeout => setTimeout(r, milliseconds));
 }

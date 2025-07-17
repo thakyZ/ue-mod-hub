@@ -4,6 +4,6 @@
 ########################################
 returns true / false if the environment is development
 */
-export default function isDevEnvironment() {
-    return process && process.env.NODE_ENV === 'development';
+export default function isDevEnvironment(): boolean {
+    return process && process.env['NODE_ENV'] === 'development';
 }
