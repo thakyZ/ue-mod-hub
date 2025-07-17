@@ -300,6 +300,7 @@ declare module '@locales/*-dektionary.json' {
             name: string;
         };
     };
+    export declare type LocaleGameNameKeyPair = Locale['games']['generic'];
     const _default: Locale;
     export default _default;
 }
