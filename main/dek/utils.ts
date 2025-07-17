@@ -93,8 +93,8 @@ export default class Utils {
      * @param {T} object
      * @returns {ValueOf<T, TKey>}
      */
-    static randFromObject<T extends object>(object: T): ValueOf<T> {
-        return object[this.randFromArray(Object.keys(object))];
+    static randFromObject<T extends Record<string | number | symbol, unknown>>(object: T): ValueOf<T> {
+        return object[this.randFromArray(Object.keys(object))] as ValueOf<T>;
     }
 
     /**
