@@ -62,7 +62,7 @@ function getPath(): string {
  * @remarks NOTE: Providing destination path is optional. In case it is not provided, cb is expected as the second argument to function.
  * @overload
  */
-function unpack(pathToPack: string, destPathOrCb: RunCallback, cb?: undefined): void;
+// function unpack(pathToPack: string, destPathOrCb: RunCallback, cb?: undefined): void;
 
 /**
  * Unpack archive.
@@ -75,7 +75,7 @@ function unpack(pathToPack: string, destPathOrCb: RunCallback, cb?: undefined): 
  * @remarks NOTE: Providing destination path is optional. In case it is not provided, cb is expected as the second argument to function.
  * @overload
  */
-function unpack(pathToPack: string, destPathOrCb: string, cb?: RunCallback): void;
+// function unpack(pathToPack: string, destPathOrCb: string, cb?: RunCallback): void;
 
 /**
  * Unpack archive.

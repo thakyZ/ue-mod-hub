@@ -4,49 +4,56 @@
 ########################################
 */
 import * as CommonIcons from '@config/common-icons';
+import type { AppLogger } from '@hooks/use-app-logger';
+import useAppLogger from '@hooks/use-app-logger';
+import type { CommonChecks } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
+import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { IValidateKeyResponse } from '@nexusmods/nexus-api';
+import type { UseStatePair } from '@typed/common';
 import Link from 'next/link';
-import type { HTMLAttributes, ReactElement } from 'react';
-import React from 'react';
+import type { ReactElement } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'react-bootstrap/Image';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Tooltip from 'react-bootstrap/Tooltip';
-// import useAppLogger from '@hooks/use-app-logger';
 import { SwapSpinner } from 'react-spinners-kit';
 
-export default function Footer(): ReactElement<HTMLAttributes<HTMLElement>> {
-    const { t /* , ready */ } = useLocalization();
-    const [userCount, setUserCount] = React.useState<string>('??');
-    const [rateLimits, setRateLimits] = React.useState<string>('??');
-    const [validation, setValidation] = React.useState<IValidateKeyResponse | null>(null);
-    const { commonAppData } = useCommonChecks();
+export default function Footer(): ReactElement {
+    const applog: AppLogger = useAppLogger('Footer');
+    const { t /* , ready */ }: UseLocalizationReturn = useLocalization();
+    const [userCount, setUserCount]: UseStatePair<string> = useState<string>('??');
+    const [rateLimits, setRateLimits]: UseStatePair<string> = useState<string>('??');
+    const [validation, setValidation]: UseStatePair<IValidateKeyResponse | null> = useState<IValidateKeyResponse | null>(
+        null
+    );
+    const { commonAppData, handleError }: CommonChecks = useCommonChecks();
     const delay = { show: 100, hide: 250 };
 
-    React.useEffect(() => {
+    useEffect((): void | VoidFunction => {
         if (!window.ipc) return console.error('ipc not loaded');
         const callback: VoidFunction = (): void => {
-            void (async (): Promise<void> => {
+            (async (): Promise<void> => {
                 const user_result: number | undefined = await window.ipc.invoke('get-user-count');
                 // format the user count to be more readable
                 const locale: Intl.LocalesArgument = Intl.DateTimeFormat().resolvedOptions().locale;
                 const options: Intl.NumberFormatOptions = { notation: 'compact', maximumFractionDigits: 1 };
                 if (!user_result) return setUserCount('??');
-                const readable_count = Intl.NumberFormat(locale, options).format(user_result);
+                const readable_count: string = Intl.NumberFormat(locale, options).format(user_result);
                 setUserCount(readable_count);
-            })();
+            })().catch((error: unknown): void => handleError(error, applog));
         };
         setTimeout(callback, 1000 * 1);
         // const fifteenMinutes = 1000 * 60 * 15;
-        const eachHour = 1000 * 60 * 60;
-        const handle = setInterval(callback, eachHour);
-        return () => clearInterval(handle);
-    }, []);
+        const eachHour: number = 1000 * 60 * 60;
+        const handle: NodeJS.Timeout = setInterval(callback, eachHour);
+        return (): void => clearInterval(handle);
+    }, [handleError, applog]);
 
-    React.useEffect(() => {
+    useEffect((): VoidFunction => {
         const callback: VoidFunction = (): void => {
-            void (async (): Promise<void> => {
+            (async (): Promise<void> => {
                 console.log('checking rate limits');
                 if (!window.nexus) return console.error('nexus not loaded');
                 if (!window.uStore) return console.error('uStore not loaded');
@@ -58,13 +65,13 @@ export default function Footer(): ReactElement<HTMLAttributes<HTMLElement>> {
                 const validation_result: IValidateKeyResponse = await window.nexus(api_key, 'getValidationResult');
                 setValidation(validation_result);
                 setRateLimits(readable_rate);
-            })();
+            })().catch((error: unknown): void => handleError(error, applog));
         };
         // callback(); // run once on load
         setTimeout(callback, 1000 * 1);
-        const handle = setInterval(callback, 1000 * 60 * 1);
-        return () => clearInterval(handle);
-    }, [commonAppData?.apis]);
+        const handle: NodeJS.Timeout = setInterval(callback, 1000 * 60 * 1);
+        return (): void => clearInterval(handle);
+    }, [applog, commonAppData.apis, handleError]);
 
     // if (!ready) return <></>;
 

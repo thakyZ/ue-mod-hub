@@ -4,18 +4,16 @@
 ########################################
 */
 
-// import assert from 'node:assert';
-
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { CommonAppDataContextType, GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError } from '@hooks/use-common-checks';
+import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
+import useCommonChecks from '@hooks/use-common-checks';
 // import type { UseLocalizationReturn } from '@hooks/use-localization';
 // import useLocalization from '@hooks/use-localization';
 import type { UseScreenSizeReturn } from '@hooks/use-screen-size';
 import useScreenSize from '@hooks/use-screen-size';
 import type { Ue4ssSettingsFlat } from '@main/dek/game-map';
-import type { PromiseVoidFunction, UseStatePair } from '@typed/common';
+import type { PromiseVoidFunction, UseStatePair, VoidFunctionWithArgs } from '@typed/common';
 import type { DownloadFileEvent, ValidateGamePathReturnType } from '@typed/palhub';
 import replaceUe4ssIniKeyValue from '@utils/replace-ini-key';
 import wait from '@utils/wait';
@@ -33,7 +31,7 @@ export default function UE4SSInstallProgress({
     onComplete,
 }: UE4SSInstallProgressProps): ReactElement<UE4SSInstallProgressProps> {
     const applog: AppLogger = useAppLogger('UE4SSInstallProgress');
-    const { requiredModulesLoaded }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded, handleError }: CommonChecks = useCommonChecks();
     // const { t, tA }: UseLocalizationReturn = useLocalization();
 
     const { isDesktop }: UseScreenSizeReturn = useScreenSize();
@@ -47,16 +45,21 @@ export default function UE4SSInstallProgress({
 
     const [logMessages, setLogMessages]: UseStatePair<string[]> = useState<string[]>([]);
 
-    const addLogMessage = (message: string) => {
-        setLogMessages((old: string[]): string[] => [...old, message]);
-        if (logRef.current) {
-            setTimeout((): number | false => !!logRef.current && (logRef.current.scrollTop = logRef.current.scrollHeight));
-        }
-    };
+    const addLogMessage: VoidFunctionWithArgs<[message: string]> = useCallback(
+        (message: string): void => {
+            setLogMessages((old: string[]): string[] => [...old, message]);
+            if (logRef.current) {
+                setTimeout(
+                    (): number | false => !!logRef.current && (logRef.current.scrollTop = logRef.current.scrollHeight)
+                );
+            }
+        },
+        [setLogMessages, logRef]
+    );
 
-    const resetLogMessages: VoidFunction = (): void => {
+    const resetLogMessages: VoidFunction = useCallback((): void => {
         setLogMessages([]);
-    };
+    }, [setLogMessages]);
 
     const onFinished: VoidFunction = useCallback((): void => {
         (async (resetLogMessages: VoidFunction, onComplete: PromiseVoidFunction): Promise<void> => {
@@ -65,8 +68,8 @@ export default function UE4SSInstallProgress({
             setTimeout((): void => {
                 resetLogMessages();
             }, 500);
-        })(resetLogMessages, onComplete).catch((error: unknown) => handleError(error, applog));
-    }, [resetLogMessages, onComplete]);
+        })(resetLogMessages, onComplete).catch((error: unknown): void => handleError(error, applog));
+    }, [resetLogMessages, onComplete, handleError, applog]);
 
     // initialize the ue4ss installation's configuration
     const setUe4ssDefaultSettings: VoidFunction = useCallback((): void => {
@@ -76,9 +79,20 @@ export default function UE4SSInstallProgress({
                 addLogMessage('Setting UE4SS Default Settings');
 
                 const game_data: ValidateGamePathReturnType = await window.palhub('validateGamePath', game.path);
-                if (game_data.type === '{invalid-path}') throw new Error(`Failed to validate game path at ${game.path}, got ${game_data.type}`, { cause: game_data });
-                if (game_data.type === '{UNKNOWN}') throw new Error(`Failed to validate game path at ${game.path}, got ${game_data.type}`, { cause: game_data });
-                if (!('ue4ss_root' in game_data)) throw new Error(`Failed to validate game path at ${game.path}, invalid type (Property 'ue4ss_root' does not exist in data)`, { cause: game_data });
+                // if (game_data.type === '{invalid-path}' || game_data.type === '{UNKNOWN}' || !('ue4ss_root' in game_data)) return;
+                if (game_data.type === '{invalid-path}')
+                    throw new Error(`Failed to validate game path at ${game.path}, got ${game_data.type}`, {
+                        cause: game_data,
+                    });
+                if (game_data.type === '{UNKNOWN}')
+                    throw new Error(`Failed to validate game path at ${game.path}, got ${game_data.type}`, {
+                        cause: game_data,
+                    });
+                if (!('ue4ss_root' in game_data))
+                    throw new Error(
+                        `Failed to validate game path at ${game.path}, invalid type (Property 'ue4ss_root' does not exist in data)`,
+                        { cause: game_data }
+                    );
                 const ini_path: string = await window.palhub('joinPath', game_data.ue4ss_root, 'UE4SS-settings.ini');
                 let updated_ini: string = (await window.palhub('readFile', ini_path, { encoding: 'utf8' })) as string;
 
@@ -99,7 +113,7 @@ export default function UE4SSInstallProgress({
                 console.error(error);
             }
         })(game, onFinished).catch((error: unknown) => handleError(error, applog));
-    }, [game, onFinished]);
+    }, [addLogMessage, applog, game, handleError, onFinished, requiredModulesLoaded]);
 
     useEffect((): void | VoidFunction => {
         if (!requiredModulesLoaded) return;
@@ -139,7 +153,7 @@ export default function UE4SSInstallProgress({
 
         const removeDataHandler = window.ipc.on('ue4ss-process', processData);
         return (): void => removeDataHandler();
-    }, [onFinished]);
+    }, [addLogMessage, onFinished, requiredModulesLoaded, setUe4ssDefaultSettings]);
 
     // return <pre className="m-0 p-2 text-start">{logMessages.join('\n')}</pre>;
 

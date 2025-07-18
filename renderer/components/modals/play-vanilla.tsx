@@ -9,7 +9,7 @@ import DekCommonAppModal from '@components/core/modal';
 import useActiveGame from '@hooks/use-active-game';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { CommonAppDataContextType, GameInformation } from '@hooks/use-common-checks';
+import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
 import useCommonChecks, { handleError } from '@hooks/use-common-checks';
 import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
@@ -29,7 +29,7 @@ export default function PlayVanillaModal({
     onRunGameExe,
 }: PlayVanillaModalProps): ReactElement<PlayVanillaModalProps> {
     const applog: AppLogger = useAppLogger('PlayVanillaModal');
-    const { commonAppData }: CommonAppDataContextType = useCommonChecks();
+    const { commonAppData }: CommonChecks = useCommonChecks();
     const onCancel: VoidFunction = useCallback(() => setShow(false), []);
     const { activeGame } = useActiveGame();
     const game: GameInformation | undefined = activeGame;

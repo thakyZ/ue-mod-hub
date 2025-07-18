@@ -5,6 +5,7 @@
 */
 import BBCode, { Tag } from 'bbcode-to-react';
 import DOMPurify from 'dompurify';
+import type { ReactElement } from 'react';
 import React from 'react';
 
 export declare interface BBCodeRendererProps {
@@ -76,6 +77,6 @@ function sanitizeBB(bbcodeText: string): string {
     return bbcodeText ?? '';
 }
 
-export default function BBCodeRenderer({ bbcodeText }: BBCodeRendererProps) {
+export default function BBCodeRenderer({ bbcodeText }: BBCodeRendererProps): ReactElement<BBCodeRendererProps> {
     return <div className="bbcode-div mb-3" children={BBCode.toReact(sanitizeBB(bbcodeText))} />;
 }

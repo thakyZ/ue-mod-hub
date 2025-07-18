@@ -64,7 +64,6 @@ import type { WriteStream } from 'node:fs';
 import { createWriteStream } from 'node:fs';
 import { Socket } from 'node:net';
 
-import type { WriteStreamOptions } from '@typed/fs.extends';
 import { DateTime } from 'luxon';
 
 export declare type LogLevelsType = 'fatal' | 'error' | 'warn' | 'http' | 'info' | 'log';
@@ -95,9 +94,10 @@ export declare type LogFormatter = (
     transport: LogTransportType,
     logger: LoggyBoi
 ) => [LogLevelsType, string | undefined, string | undefined, string | Error];
+type CreateFileStreamParams = Parameters<typeof createWriteStream>[1];
 export declare type FileOptions = {
     filename: string;
-    options?: BufferEncoding | WriteStreamOptions;
+    options?: CreateFileStreamParams;
 };
 export declare type HttpOptions = {
     path: string;

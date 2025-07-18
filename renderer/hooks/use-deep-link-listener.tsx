@@ -87,7 +87,7 @@ export const DeepLinkProvider = ({ children }: DeepLinkProviderProps): ReactElem
             setDeepLink(link);
         });
         return (): void => removeLinkListener();
-    }, [deepLink]);
+    }, [deepLink, logger]);
 
     useEffect((): void => {
         if (!deepLink) return;

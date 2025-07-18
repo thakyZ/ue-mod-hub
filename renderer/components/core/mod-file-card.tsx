@@ -11,7 +11,7 @@ import type { CommonIcon } from '@config/common-icons';
 import * as CommonIcons from '@config/common-icons';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { CommonAppDataContextType } from '@hooks/use-common-checks';
+import type { CommonChecks } from '@hooks/use-common-checks';
 import useCommonChecks, { handleError, parseIntSafe } from '@hooks/use-common-checks';
 import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
@@ -41,7 +41,7 @@ export default function ModFileCard({
     showHR = true,
 }: ModFileCardProps): ReactElement<ModFileCardProps> | null {
     const applog: AppLogger = useAppLogger('ModFileCard');
-    const { requiredModulesLoaded, commonAppData }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
 
     const api_key: string | null = commonAppData?.apis?.nexus;
     const game_path: string | undefined = commonAppData?.selectedGame?.path;

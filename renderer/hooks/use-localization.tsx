@@ -32,11 +32,16 @@ export default PageOrComponent() {
     return <div>{t('key.string', {propname: "value"})}</div>;
 }
 */
+import type { AppLogger } from '@hooks/use-app-logger';
+import useAppLogger from '@hooks/use-app-logger';
+import type { CommonChecks } from '@hooks/use-common-checks';
+import useCommonChecks from '@hooks/use-common-checks';
 import type { Locale } from '@locales/*-dektionary.json';
 import type { Locale as Ue4ssLocale } from '@locales/*-ue4ss.json';
+import type { PromiseVoidFunctionWithArgs, TypeFunctionWithArgs } from '@typed/common';
+import wait from '@utils/wait';
 import type { Context, HTMLAttributes, ReactElement } from 'react';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import wait from '@utils/wait';
 import type { Get, Paths } from 'type-fest';
 
 const VALID_LANGUAGES = ['dev', 'en'] as const; //, 'es', 'fr', 'de', 'it', 'ja', 'ko', 'pt', 'ru', 'zh'];
@@ -136,14 +141,16 @@ export declare type LocalizationProviderProperties = Pick<HTMLAttributes<HTMLDiv
 // }
 
 // Context for Localization
-const LocalizationContext = createContext<LocalizationContextType<ValidNamespaceTypes>>(
-    {} as LocalizationContextType<ValidNamespaceTypes>
-);
+const LocalizationContext: Context<LocalizationContextType<ValidNamespaceTypes>> = createContext<
+    LocalizationContextType<ValidNamespaceTypes>
+>({} as LocalizationContextType<ValidNamespaceTypes>);
 
 // Localization Provider Component
-export const LocalizationProvider = <TNamespace extends ValidNamespaceTypes>({
+export function LocalizationProvider<TNamespace extends ValidNamespaceTypes>({
     children,
-}: LocalizationProviderProperties): ReactElement<LocalizationProviderProperties> => {
+}: LocalizationProviderProperties): ReactElement<LocalizationProviderProperties> {
+    const { handleError }: CommonChecks = useCommonChecks();
+    const applog: AppLogger = useAppLogger('LocalizationProvider');
     const hasWindow: boolean = window !== undefined;
     const [bundle, setBundle] = useState<TNamespace | undefined>();
     const [ready, setReady] = useState<boolean>(false);
@@ -151,28 +158,29 @@ export const LocalizationProvider = <TNamespace extends ValidNamespaceTypes>({
     const [language, setLanguage] = useState<ValidLanguages | undefined>();
 
     // translate to string (inner function ~ not directly exposed)
-    const innerT = useCallback(
-        function (pointkey: string, bundle_override: TNamespace | undefined = undefined): unknown {
-            if (!bundle) return pointkey;
-            // if (bundle_override) {
-            //     console.log('bundle_override:', bundle_override);
-            // }
-            // TODO: check this for the other localization files as well.
-            const bundle_point: TNamespace = bundle_override ?? bundle;
-            let point_found: unknown;
-            for (const key of pointkey.split('.') as (keyof typeof bundle_point)[]) {
-                if (!bundle_point[key]) continue;
-                point_found = bundle_point[key];
-            }
-            if (Array.isArray(point_found)) return point_found as string[];
-            if (typeof point_found !== 'string') return pointkey;
-            return point_found; // ?? pointkey;
-        },
-        [bundle]
-    );
+    const innerT: TypeFunctionWithArgs<[pointkey: string, bundle_override?: TNamespace | undefined], unknown> =
+        useCallback(
+            function (pointkey: string, bundle_override: TNamespace | undefined = undefined): unknown {
+                if (!bundle) return pointkey;
+                // if (bundle_override) {
+                //     console.log('bundle_override:', bundle_override);
+                // }
+                // TODO: check this for the other localization files as well.
+                const bundle_point: TNamespace = bundle_override ?? bundle;
+                let point_found: unknown;
+                for (const key of pointkey.split('.') as (keyof typeof bundle_point)[]) {
+                    if (!bundle_point[key]) continue;
+                    point_found = bundle_point[key];
+                }
+                if (Array.isArray(point_found)) return point_found as string[];
+                if (typeof point_found !== 'string') return pointkey;
+                return point_found; // ?? pointkey;
+            },
+            [bundle]
+        );
 
     // translate to string with replacers (inner function ~ not directly exposed)
-    const innerM = useCallback(
+    const innerM: LocalizationContextType<TNamespace>['innerM'] = useCallback(
         (
             bundle_point: string = '',
             replacers: Record<string, any> = {}, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -211,7 +219,7 @@ export const LocalizationProvider = <TNamespace extends ValidNamespaceTypes>({
 
     // translate to string based on keystring
     // fairly similar to react-i18next's useTranslation hook in functionality
-    const t = useCallback(
+    const t: LocalizationContextType<TNamespace>['t'] = useCallback(
         (
             keystring: string,
             replacers: Record<string, any> = {}, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -223,24 +231,24 @@ export const LocalizationProvider = <TNamespace extends ValidNamespaceTypes>({
                 // handle array of strings
                 try {
                     return bundle_point
-                        .map((value: string): string => innerT(value) as string)
-                        .map((e: string): unknown => innerM(e, replacers, bundle_override));
+                        .map<string>((value: string): string => innerT(value) as string)
+                        .map<unknown>((e: string): unknown => innerM(e, replacers, bundle_override));
                 } catch (error: unknown) {
                     console.error(error);
                 }
                 return [] as unknown[];
             }
             // handle single strings
-            const finalized = innerM(bundle_point, replacers, bundle_override); // finalized string
+            const finalized: unknown = innerM(bundle_point, replacers, bundle_override); // finalized string
             // create array of expected size with finalized elements in each
             if (expectedArraySize) return Array.from({ length: expectedArraySize }).fill(finalized);
             return finalized;
         },
-        [bundle, innerT, innerM]
+        [/* bundle, */ innerT, innerM]
     );
 
     // translate to array of strings based on keystring
-    const tA = useCallback(
+    const tA: LocalizationContextType<TNamespace>['tA'] = useCallback(
         (
             keystring: string,
             replacersOrSize: Record<string, any> | number = {}, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -255,7 +263,7 @@ export const LocalizationProvider = <TNamespace extends ValidNamespaceTypes>({
     );
 
     // translate to raw object/array/string based on keystring
-    const tO = useCallback(
+    const tO: LocalizationContextType<TNamespace>['tO'] = useCallback(
         function (keystring: string, bundle_override: TNamespace | undefined = undefined): unknown {
             const result: unknown = innerT(keystring, bundle_override);
             if (result === keystring) return null;
@@ -265,7 +273,7 @@ export const LocalizationProvider = <TNamespace extends ValidNamespaceTypes>({
     );
 
     // try to load the language bundle for the selected locale
-    const tryLoadBundle = useCallback(
+    const tryLoadBundle: LocalizationContextType<TNamespace>['tryLoadBundle'] = useCallback(
         async (
             locale: ValidLanguages | undefined,
             namespace: string = DEFAULT_NAMESPACE,
@@ -283,8 +291,8 @@ export const LocalizationProvider = <TNamespace extends ValidNamespaceTypes>({
     );
 
     // updates selected language bundle with fallback to english
-    const onUpdateLanguage = useCallback(
-        async (locale: ValidLanguages, namespace?: string) => {
+    const onUpdateLanguage: PromiseVoidFunctionWithArgs<[locale: ValidLanguages, namespace?: string]> = useCallback(
+        async (locale: ValidLanguages, namespace?: string): Promise<void> => {
             if (!hasWindow || !window.ipc) return;
             let newBundle: TNamespace | undefined = await tryLoadBundle(locale, namespace);
             if (!newBundle) newBundle = await tryLoadBundle('en', namespace);
@@ -294,10 +302,10 @@ export const LocalizationProvider = <TNamespace extends ValidNamespaceTypes>({
             // setReady(newBundle && Object.keys(newBundle).length > 0);
             setReady(true);
         },
-        [hasWindow]
+        [hasWindow, tryLoadBundle]
     );
 
-    const changeLanguage = useCallback(
+    const changeLanguage: LocalizationContextType<TNamespace>['changeLanguage'] = useCallback(
         (locale: ValidLanguages, namespace: string | undefined = undefined): void => {
             void onUpdateLanguage(locale, namespace);
         },
@@ -309,12 +317,12 @@ export const LocalizationProvider = <TNamespace extends ValidNamespaceTypes>({
         if (!hasWindow || !window.ipc) return;
         // if (loadDelay === undefined) return;
         if (!language)
-            void (async (): Promise<void> => {
+            (async (): Promise<void> => {
                 const locale: ValidLanguages = (await window.ipc.invoke('get-config', 'locale', 'en')) as ValidLanguages;
                 await wait(loadDelay); // artificial delay to show load screen
                 await onUpdateLanguage(locale);
-            })();
-    }, [hasWindow, loadDelay]);
+            })().catch((error: unknown): void => handleError(error, applog));
+    }, [hasWindow, language, loadDelay, onUpdateLanguage, handleError, applog]);
 
     const exposed: LocalizationContextType<ValidNamespaceTypes> = {
         ready,
@@ -329,7 +337,7 @@ export const LocalizationProvider = <TNamespace extends ValidNamespaceTypes>({
     } as LocalizationContextType<ValidNamespaceTypes>;
 
     return <LocalizationContext.Provider value={exposed}>{children}</LocalizationContext.Provider>;
-};
+}
 
 // Export actual hook to useLocalization
 export default function useLocalization<
@@ -337,6 +345,8 @@ export default function useLocalization<
     // prettier-ignore
     TNamespace extends TLocaleType extends 'ue4ss' ? Ue4ssLocale : Locale = TLocaleType extends 'ue4ss' ? Ue4ssLocale : Locale,
 >(namespace: TLocaleType | null = null, loadDelay: number = ARTIFICIAL_LOAD_DELAY): UseLocalizationReturn<TNamespace> {
+    const { handleError }: CommonChecks = useCommonChecks();
+    const applog: AppLogger = useAppLogger('LocalizationProvider');
     const context: LocalizationContextType<TNamespace> = useContext<LocalizationContextType<TNamespace>>(
         LocalizationContext as unknown as Context<LocalizationContextType<TNamespace>>
     );
@@ -345,13 +355,13 @@ export default function useLocalization<
 
     useEffect((): void => {
         if (namespace)
-            void (async (): Promise<void> => {
+            (async (): Promise<void> => {
                 setBundle(await context.tryLoadBundle(context.language, namespace, loadDelay));
-            })();
-    }, [context, namespace]);
+            })().catch((error: unknown): void => handleError(error, applog));
+    }, [context, loadDelay, namespace, handleError, applog]);
 
     // Localized translation function to override global translations with namespace ones
-    const t = useCallback(
+    const t: UseLocalizationReturn<TNamespace>['t'] = useCallback(
         function <TKey extends LocaleLeaves<TNamespace> = LocaleLeaves<TNamespace>>(
             key: TKey,
             replacers: Record<string, any> = {}, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -362,7 +372,7 @@ export default function useLocalization<
         [context, bundle]
     );
 
-    const tA = useCallback(
+    const tA: UseLocalizationReturn<TNamespace>['tA'] = useCallback(
         function <TKey extends LocaleLeaves<TNamespace> = LocaleLeaves<TNamespace>>(
             key: TKey,
             replacersOrSize: Record<string, any> | number = {}, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -373,7 +383,7 @@ export default function useLocalization<
         [context, bundle]
     );
 
-    const tO = useCallback(
+    const tO: UseLocalizationReturn<TNamespace>['tO'] = useCallback(
         function <TKey extends LocaleLeaves<TNamespace> = LocaleLeaves<TNamespace>>(
             key: TKey
         ): Get<TNamespace, TKey> | null {
@@ -382,7 +392,7 @@ export default function useLocalization<
         [context, bundle]
     );
 
-    const tString = useCallback(
+    const tString: UseLocalizationReturn<TNamespace>['tString'] = useCallback(
         function (
             instr: string,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

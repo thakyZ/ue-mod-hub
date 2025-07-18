@@ -8,7 +8,7 @@ import type { CommonIcon } from '@config/common-icons';
 import * as CommonIcons from '@config/common-icons';
 import type { PropsMouseEvent } from '@typed/common';
 import type { Property } from 'csstype';
-import type { HTMLAttributes, MouseEvent } from 'react';
+import type { HTMLAttributes, MouseEvent, MouseEventHandler, ReactElement } from 'react';
 import { useCallback /* , useMemo, useState */ } from 'react';
 import type { ButtonVariant } from 'react-bootstrap/esm/types';
 
@@ -29,11 +29,11 @@ const DEFAULT_ICONS: IconsMap = {
     disabled: CommonIcons.tog_disabled,
 };
 
-export default function DekSwitch(props: DekSwitchProps) {
-    let text = props.text;
+export default function DekSwitch(props: DekSwitchProps): ReactElement<DekSwitchProps> {
+    let text: string | undefined = props.text;
     const {
         checked = false,
-        onClick = () => {},
+        onClick = (): void => {},
         icons = DEFAULT_ICONS,
         style = {},
         className = '',
@@ -43,7 +43,7 @@ export default function DekSwitch(props: DekSwitchProps) {
     } = props;
     // const [active, setActive] = useState(checked);
     const Icon: CommonIcon = checked ? icons.enabled : icons.disabled;
-    const onClickedBox = useCallback(
+    const onClickedBox: MouseEventHandler<HTMLDivElement> = useCallback(
         (event: MouseEvent<HTMLDivElement>): boolean => {
             const newval: boolean = !checked;
             onClick({ props, ...event }, newval);
@@ -55,7 +55,7 @@ export default function DekSwitch(props: DekSwitchProps) {
             //     return newval;
             // });
         },
-        [checked]
+        [checked, onClick, props]
     );
 
     // overwrite text if labels exist:
@@ -67,7 +67,7 @@ export default function DekSwitch(props: DekSwitchProps) {
                 className="btn-group dek-switch w-100"
                 role="group"
                 style={{ minWidth: 128 }}
-                onClick={(event: MouseEvent<HTMLDivElement>) => onClickedBox(event)}
+                onClick={(event: MouseEvent<HTMLDivElement>): void => onClickedBox(event)}
             >
                 <div
                     className={`btn btn-dark hover-${color} text-center px-0 py-1`}

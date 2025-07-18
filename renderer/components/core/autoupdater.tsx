@@ -3,7 +3,7 @@
 # PalHUB::Client by dekitarpg@gmail.com
 ########################################
 */
-// import styles from '../styles/Home.module.css'
+// import styles from '@styles/Home.module.css'
 // import { motion } from 'framer-motion';
 import useLocalization from '@hooks/use-localization';
 import type { AutoUpdaterEventType, DownloadProgressType } from '@main/dek/deap';
@@ -86,7 +86,7 @@ export default function AutoUpdater({ _: __ }: AutoUpdaterProps): ReactElement<A
         // setCanInstallUpdate(false);
 
         return () => remove_auto_update_handler();
-    }, [active_route]);
+    }, [active_route, t]);
 
     const showUpdateMessage = updateMessage || canInstallUpdate;
 

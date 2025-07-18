@@ -2,13 +2,16 @@ import DekItem from '@components/core/dek-item';
 import DekSelect from '@components/core/dek-select';
 import { PlatformIcon } from '@components/game-card';
 import type { GamesAarray } from '@hooks/use-active-game';
+import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 // import GameCardComponent from '@components/game-card';
 import type { GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError } from '@hooks/use-common-checks';
+import type { CommonChecks } from '@hooks/use-common-checks';
+import useCommonChecks from '@hooks/use-common-checks';
+import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { Dispatch, HTMLAttributes, MouseEvent, ReactElement, ReactNode, SetStateAction } from 'react';
-import React, { useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 
 export declare interface ActiveGameSelectorProps extends Pick<HTMLAttributes<HTMLElement>, 'className'> {
     gamesArray: GamesAarray;
@@ -22,8 +25,8 @@ export default function ActiveGameSelector({
     setTempGame = null,
     className = 'col-12 pb-3',
 }: ActiveGameSelectorProps): ReactElement<ActiveGameSelectorProps> {
-    const applog = useAppLogger('ActiveGameSelector');
-    const { commonAppData, updateSelectedGame } = useCommonChecks();
+    const applog: AppLogger = useAppLogger('ActiveGameSelector');
+    const { commonAppData, updateSelectedGame, handleError }: CommonChecks = useCommonChecks();
     const api_key: string | null = commonAppData?.apis?.nexus;
 
     const onChangeSelectedGame = useCallback(
@@ -41,16 +44,16 @@ export default function ActiveGameSelector({
                 if (setTempGame) setTempGame(game);
             }).catch((error: unknown): void => handleError(error, applog));
         },
-        [updateSelectedGame, gamesArray]
+        [api_key, updateSelectedGame, gamesArray, setTempGame, handleError, applog]
     );
 
     useEffect((): void => {
         if (selectedGameID === -1 && gamesArray.length > 0) {
-            updateSelectedGame(gamesArray[0]).catch((error: unknown): void => handleError(error));
+            updateSelectedGame(gamesArray[0]).catch((error: unknown): void => handleError(error, applog));
         }
-    }, [selectedGameID, gamesArray]);
+    }, [selectedGameID, gamesArray, updateSelectedGame, handleError, applog]);
 
-    const { t } = useLocalization();
+    const { t }: UseLocalizationReturn = useLocalization();
     const iconOptions = { height: '1.8rem', style: { marginTop: -4 } };
     return (
         <div className={className}>

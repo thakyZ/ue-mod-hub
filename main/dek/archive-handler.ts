@@ -8,7 +8,6 @@
 import { EventEmitter } from 'node:events';
 import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { Stream } from 'node:stream';
 
 // import SevenZip from '7zip-min';
 import type { SevenZipEntry } from '@main/dek/7zip-min-override';
@@ -20,12 +19,7 @@ import AdmZip from 'adm-zip'; // for de-zip
 import type { ArcFile, ArcFiles, Extractor } from 'node-unrar-js';
 import { createExtractorFromData } from 'node-unrar-js'; // for de-rar
 
-export declare type ArchiveEntryData =
-    | string
-    | NodeJS.ArrayBufferView
-    | Iterable<string | NodeJS.ArrayBufferView>
-    | AsyncIterable<string | NodeJS.ArrayBufferView>
-    | Stream;
+export declare type ArchiveEntryData = Parameters<typeof writeFile>[1];
 export declare interface ArchiveEntry {
     entryName: string;
     outputPath?: string;

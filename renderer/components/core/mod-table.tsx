@@ -3,11 +3,15 @@
 # PalHUB::Client by dekitarpg@gmail.com
 ########################################
 */
+import type { CommonChecks } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
+import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
+import type { UseScreenSizeReturn } from '@hooks/use-screen-size';
 import useScreenSize from '@hooks/use-screen-size';
+import type { VoidFunctionWithArgs } from '@typed/common';
 import type { IModInfoWithSavedConfig } from '@typed/palhub';
-import type { Dispatch, ReactElement, SetStateAction } from 'react';
+import type { Dispatch, MouseEvent, ReactElement, SetStateAction } from 'react';
 import { useCallback } from 'react';
 
 type ModTablePropsModType = Pick<
@@ -22,13 +26,18 @@ export declare interface ModTableProps {
     showStatus?: boolean;
 }
 
-export default function ModTable({ show: _show, setShow: _setShow, mods, showStatus = false }: ModTableProps) {
-    const { commonAppData } = useCommonChecks();
-    const { t, tA: _tA } = useLocalization();
-    const { isDesktop } = useScreenSize();
-    const fullscreen = !isDesktop;
+export default function ModTable({
+    show: _show,
+    // setShow,
+    mods,
+    showStatus = false,
+}: ModTableProps): ReactElement<ModTableProps> {
+    const { commonAppData }: CommonChecks = useCommonChecks();
+    const { t /* tA */ }: UseLocalizationReturn = useLocalization();
+    const { isDesktop }: UseScreenSizeReturn = useScreenSize();
+    const fullscreen: boolean = !isDesktop;
 
-    const openModInBrowser = useCallback(
+    const openModInBrowser: VoidFunctionWithArgs<[mod_id: number | string | undefined]> = useCallback(
         (mod_id: number | string | undefined): void => {
             const gameID: string | undefined = commonAppData?.selectedGame?.map_data.providers.nexus;
             if (!gameID || !mod_id) return;
@@ -55,10 +64,16 @@ export default function ModTable({ show: _show, setShow: _setShow, mods, showSta
                 style={fullscreen ? { height: 'calc(100vh - 207px)' } : { height: 'calc(100vh / 4 * 2)' }}
             >
                 {mods
-                    .filter((mod: ModTablePropsModType | null) => !!mod)
-                    .map(
-                        (mod: ModTablePropsModType): ReactElement<IModInfoWithSavedConfig> => (
-                            <tr key={mod.mod_id} className="" onClick={(): void => void openModInBrowser(mod.mod_id)}>
+                    .filter<ModTablePropsModType | null, NonNullable<ModTablePropsModType>>(
+                        (mod: ModTablePropsModType | null): boolean => !!mod
+                    )
+                    .map<ReactElement>(
+                        (mod: ModTablePropsModType): ReactElement => (
+                            <tr
+                                key={mod.mod_id}
+                                className=""
+                                onClick={(_event: MouseEvent<HTMLTableRowElement>): void => openModInBrowser(mod.mod_id)}
+                            >
                                 <td className={`bg-dark ${main_col_size} truncate`}>{mod.name}</td>
                                 <td className="bg-dark col text-center d-none d-md-table-cell truncate">{mod.author}</td>
                                 <td className="bg-dark col text-center d-none d-sm-table-cell">{mod.version}</td>

@@ -16,7 +16,7 @@ import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 // import ModListModal from '@components/modals/mod-list';
 // import * as CommonIcons from '@config/common-icons';
-import type { CommonAppDataContextType, GameInformation } from '@hooks/use-common-checks';
+import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
 import useCommonChecks, { handleError, parseIntSafe } from '@hooks/use-common-checks';
 import type { LocaleLeaves, UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
@@ -99,7 +99,7 @@ export default function ModsPage(): ReactElement {
     // const router = useRouter();
     const applog: AppLogger = useAppLogger('ModsPage');
     const { t, tA }: UseLocalizationReturn = useLocalization();
-    const { requiredModulesLoaded, commonAppData }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
     const cache_dir: string | null = commonAppData?.cache;
     const game_path: string | undefined = commonAppData?.selectedGame?.path;
     const game_data: GameInformation | undefined = commonAppData?.selectedGame;

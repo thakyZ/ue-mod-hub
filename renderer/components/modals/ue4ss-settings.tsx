@@ -10,7 +10,7 @@ import DekCommonAppModal from '@components/core/modal';
 import { ensureEntryValueType, ENVEntry, ENVEntryLabel } from '@components/modals/common';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { CommonAppDataContextType, GameInformation } from '@hooks/use-common-checks';
+import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
 import useCommonChecks, { handleError } from '@hooks/use-common-checks';
 import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
@@ -78,7 +78,7 @@ export default function Ue4ssSettingsModal({
     const applog: AppLogger = useAppLogger('Ue4ssSettingsModal');
     const { isDesktop }: UseScreenSizeReturn = useScreenSize();
     const fullscreen: boolean = !isDesktop;
-    const { requiredModulesLoaded, commonAppData }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
     const game: GameInformation | undefined = commonAppData?.selectedGame;
     const { t, tA }: UseLocalizationReturn<Ue4ssLocale> = useLocalization('ue4ss');
 

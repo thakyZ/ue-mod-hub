@@ -18,7 +18,7 @@ import type { ServerListing } from '@components/server-card';
 // import * as CommonIcons from '@config/common-icons';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { CommonAppDataContextType } from '@hooks/use-common-checks';
+import type { CommonChecks } from '@hooks/use-common-checks';
 import useCommonChecks, { handleError, parseIntSafe } from '@hooks/use-common-checks';
 import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
@@ -99,7 +99,7 @@ export default function ServerDetailsModal({
     server,
 }: ServerDetailsModalProps): ReactElement<ServerDetailsModalProps> | null {
     const applog: AppLogger = useAppLogger('ServerDetailsModal');
-    const { commonAppData }: CommonAppDataContextType = useCommonChecks();
+    const { commonAppData }: CommonChecks = useCommonChecks();
 
     const { t, tA }: UseLocalizationReturn = useLocalization();
     const { isDesktop }: UseScreenSizeReturn = useScreenSize();

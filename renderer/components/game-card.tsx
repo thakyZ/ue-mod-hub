@@ -6,25 +6,26 @@
 // import assert from 'node:assert';
 
 // InputComponent.js
-// import { SphereSpinner } from 'react-spinners-kit';
-// import Link from 'next/link';
+// import type { CommonIcon } from '@config/common-icons';
 import * as CommonIcons from '@config/common-icons';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { CommonAppDataContextType, GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError } from '@hooks/use-common-checks';
+import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
+import useCommonChecks from '@hooks/use-common-checks';
 import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { GamePathData, GamePlatforms, LaunchTypes } from '@main/dek/game-map';
 import type { ValidateGamePathReturnType } from '@main/dek/palhub-types';
 import type { PropsMouseEventHandler, UseStatePair } from '@typed/common';
 import isDevEnvironment from '@utils/is-dev-env';
+// import Image from 'next/image';
+// import Link from 'next/link';
 import type { MouseEvent, MouseEventHandler, ReactElement, SVGProps } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import Card from 'react-bootstrap/Card';
 import Col from 'react-bootstrap/Col';
-// import Image from 'next/image';
 import Image from 'react-bootstrap/Image';
+// import { SphereSpinner } from 'react-spinners-kit';
 
 export declare type GamePathDataExtra = Pick<GamePathData, 'map_data'> & {
     name: string;
@@ -53,13 +54,16 @@ export default function GameCardComponent({
 }: GameCardComponentProps): ReactElement<GameCardComponentProps> | null {
     const applog: AppLogger = useAppLogger('GameCardComponent');
     const {
-        requiredModulesLoaded /* , commonAppData, updateSelectedGame: _updateSelectedGame */,
-    }: CommonAppDataContextType = useCommonChecks();
+        requiredModulesLoaded,
+        handleError,
+        // commonAppData,
+        // updateSelectedGame,
+    }: CommonChecks = useCommonChecks();
     const [gameData, setGameData]: UseStatePair<GamePathDataExtra | null> = useState<GamePathDataExtra | null>(
         initGameData
     );
-    // const IconComponent = CommonIcons.star;
-    const { t /* , tA */ }: UseLocalizationReturn = useLocalization();
+    // const IconComponent: CommonIcon = CommonIcons.star;
+    const { t /* tA */ }: UseLocalizationReturn = useLocalization();
 
     const realOnClick: MouseEventHandler<HTMLElement> = useCallback(
         (event: MouseEvent<HTMLElement>): void => {
@@ -76,16 +80,23 @@ export default function GameCardComponent({
         (async (): Promise<void> => {
             try {
                 const data: ValidateGamePathReturnType = await window.palhub('validateGamePath', path);
-                if (data.type === '{invalid-path}') throw new Error(`Failed to validate game path at ${path}, got ${data.type}`, { cause: data });
-                if (data.type === '{UNKNOWN}') throw new Error(`Failed to validate game path at ${path}, got ${data.type}`, { cause: data });
-                if (!('id' in data)) throw new Error(`Failed to validate game path at ${path}, invalid type (Property 'id' does not exist in data)`, { cause: data });
+                // if (data.type === '{invalid-path}' || data.type === '{UNKNOWN}' || !('id' in data)) return;
+                if (data.type === '{invalid-path}')
+                    throw new Error(`Failed to validate game path at ${path}, got ${data.type}`, { cause: data });
+                if (data.type === '{UNKNOWN}')
+                    throw new Error(`Failed to validate game path at ${path}, got ${data.type}`, { cause: data });
+                if (!('id' in data))
+                    throw new Error(
+                        `Failed to validate game path at ${path}, invalid type (Property 'id' does not exist in data)`,
+                        { cause: data }
+                    );
                 setGameData({ name: t(`games.${id}.name` as `games.palworld.name`)!, ...data });
                 // console.log('gameData:', data);
             } catch (error: unknown) {
                 console.error(error);
             }
         })().catch((error: unknown): void => handleError(error, applog));
-    }, [requiredModulesLoaded, path, tempGame?.id, tempGame?.has_ue4ss, applog]);
+    }, [requiredModulesLoaded, path, tempGame?.id, tempGame?.has_ue4ss, handleError, id, t, applog]);
 
     // console.log({id, game, ta: tA(`/games.${id}.info`)})
 

@@ -94,7 +94,7 @@ export default function DekAppLayoutWrapper({
             bg_opac,
             setBgOpac,
         };
-    }, [theme_id, bg_id, bg_opac]);
+    }, [theme_id, setThemeID, bg_id, setBgID, bg_opac, setBgOpac]);
 
     useEffect((): void => {
         if (linkChanged) {
@@ -105,7 +105,7 @@ export default function DekAppLayoutWrapper({
             void logger('info', `DEEP LINK: ${JSON.stringify(newDeepLink, null, 2)}`);
             setShowNxmModal(true);
         }
-    }, [linkChanged]);
+    }, [consumeDeepLink, deepLink, linkChanged, logger]);
 
     // prettier-ignore
     return (

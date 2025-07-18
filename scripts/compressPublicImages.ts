@@ -12,7 +12,7 @@ import { mkdir, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
 import sharp from 'sharp';
-import type { Compiler, Compilation } from 'webpack';
+import type { Compilation, Compiler } from 'webpack';
 
 /**
  * Mirror reference of the webpack class {@link WebpackLogger}
@@ -76,7 +76,7 @@ export default class CompressPublicImages {
      * Logger of the webpack plugin.
      */
     private logger: WebpackLogger | typeof console;
-    
+
     /**
      * Creates a new instance of the {@link CompressPublicImages} class
      * @param {Options} options Options for the plugin.
@@ -124,9 +124,10 @@ export default class CompressPublicImages {
      * @returns {value is InstanceType<T> & NodeJS.ErrnoException}
      * @static
      */
-    static instanceOfNodeError<
-        T extends new (message?: string, options?: ErrorOptions) => Error
-    >(value: Error, errorType: T): value is InstanceType<T> & NodeJS.ErrnoException {
+    static instanceOfNodeError<T extends new (message?: string, options?: ErrorOptions) => Error>(
+        value: Error,
+        errorType: T
+    ): value is InstanceType<T> & NodeJS.ErrnoException {
         return value instanceof errorType;
     }
 
@@ -184,9 +185,9 @@ export default class CompressPublicImages {
             // regexp checks for all image types
             const webpPath = outputPath.replace(/\.(png|jpg|jpeg|gif|bmp|tiff|webp)$/i, '.webp');
             if (existsSync(webpPath) && this.force)
-            await sharp(filePath)
-                .webp({ quality: 80, lossless: false }) // Adjust quality for lossy or use lossless: true
-                .toFile(webpPath);
+                await sharp(filePath)
+                    .webp({ quality: 80, lossless: false }) // Adjust quality for lossy or use lossless: true
+                    .toFile(webpPath);
             this.logger.log(`Converted: ${filePath} -> ${webpPath}`);
         } catch (error) {
             this.logger.error(`Failed to convert ${filePath}:`, error);
@@ -204,7 +205,11 @@ export default class CompressPublicImages {
             await mkdir(dir, { recursive: true });
         } catch (error) {
             // Ignore error if the directory exists, otherwise throw.
-            if (error instanceof Error && CompressPublicImages.instanceOfNodeError(error, TypeError) && error.code !== 'EEXIST') {
+            if (
+                error instanceof Error &&
+                CompressPublicImages.instanceOfNodeError(error, TypeError) &&
+                error.code !== 'EEXIST'
+            ) {
                 throw error;
             }
         }

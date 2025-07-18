@@ -5,7 +5,10 @@
 */
 import BrandHeader from '@components/core/brand-header';
 import MarkdownRenderer from '@components/markdown/renderer';
-import { handleError } from '@hooks/use-common-checks';
+import type { AppLogger } from '@hooks/use-app-logger';
+import useAppLogger from '@hooks/use-app-logger';
+import type { CommonChecks } from '@hooks/use-common-checks';
+import useCommonChecks from '@hooks/use-common-checks';
 import useLocalization from '@hooks/use-localization';
 import type { ImportWithDefault } from '@typed/common';
 import type { ReactElement } from 'react';
@@ -25,6 +28,8 @@ export default function MarkdownPageWrapper({
     header = true,
     fromGithub = false,
 }: MarkdownPageWrapperProps): ReactElement<MarkdownPageWrapperProps> | null {
+    const applog: AppLogger = useAppLogger('MarkdownPageWrapper');
+    const { handleError }: CommonChecks = useCommonChecks();
     const [content, setContent] = useState('');
     const { t, tString, language } = useLocalization();
 
@@ -39,7 +44,7 @@ export default function MarkdownPageWrapper({
             } catch (error: unknown) {
                 // Fallback to English if the file doesn't exist for the current locale
                 console.log(`Error loading markdown file: ${filename}.${language}.md`);
-                handleError(error);
+                handleError(error, applog);
                 // prettier-ignore
                 if (!fromGithub) markdown = (((await import(`../../markdown/${filename}.en.md`)) as ImportWithDefault).default as string);
             }
@@ -51,16 +56,14 @@ export default function MarkdownPageWrapper({
                     markdown = await response.text();
                 } catch (error: unknown) {
                     console.log(`Error loading markdown file: ${filename}`);
-                    handleError(error);
+                    handleError(error, applog);
                     markdown = null;
                 }
             }
             // Set the content of the Markdown file if it was loaded
             if (markdown) setContent(markdown);
-        })().catch((error: unknown) => {
-            handleError(error);
-        });
-    }, [filename, language]); // Re-run effect if `markdownFile` changes
+        })().catch((error: unknown) => handleError(error, applog));
+    }, [applog, filename, fromGithub, handleError, language]); // Re-run effect if `markdownFile` changes
 
     // (keystring, replacers = {}, expectedArraySize = null, bundle_override=null)
     // bundle_point = '', replacers = {}, bundle_override=null

@@ -7,10 +7,12 @@
 import DekDiv from '@components/core/dek-div';
 import ModFileCard from '@components/core/mod-file-card';
 import DekCommonAppModal from '@components/core/modal';
+import type { ActiveGame } from '@hooks/use-active-game';
 import useActiveGame from '@hooks/use-active-game';
-import type { GameInformation } from '@hooks/use-common-checks';
-import { handleError, isNXMDeepLink } from '@hooks/use-common-checks';
-// import useCommonChecks from '@hooks/use-common-checks';
+import type { AppLogger } from '@hooks/use-app-logger';
+import useAppLogger from '@hooks/use-app-logger';
+import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
+import useCommonChecks, { isNXMDeepLink } from '@hooks/use-common-checks';
 import type { DeepLinkNXMType, DeepLinkType } from '@hooks/use-deep-link-listener';
 import useLocalization, { type UseLocalizationReturn } from '@hooks/use-localization';
 import type { IFileInfo } from '@nexusmods/nexus-api';
@@ -36,10 +38,15 @@ export default function NxmLinkModal({
     setShow,
     deepLinkData = null,
 }: NxmLinkModalProps): ReactElement<NxmLinkModalProps> {
-    // const { requiredModulesLoaded, commonAppData } = useCommonChecks();
+    const applog: AppLogger = useAppLogger('NxmLinkModal');
+    const {
+        // requiredModulesLoaded,
+        // commonAppData,
+        handleError,
+    }: CommonChecks = useCommonChecks();
 
     const onCancel: VoidFunction = useCallback((): void => setShow(false), [setShow]);
-    const { activeGame } = useActiveGame();
+    const { activeGame }: ActiveGame = useActiveGame();
     const { t }: UseLocalizationReturn = useLocalization();
     const game: GameInformation | undefined = activeGame;
 
@@ -53,7 +60,7 @@ export default function NxmLinkModal({
             // onCancel();
         }
 
-        void (async (): Promise<void> => {
+        (async (): Promise<void> => {
             const api_key: string | null = await window.uStore.get<string | null>('api-keys.nexus');
             if (!api_key) return;
             const game_slug: string | undefined = deepLinkData.game_slug; //commonAppData?.selectedGame?.map_data.providers.nexus;
@@ -73,10 +80,8 @@ export default function NxmLinkModal({
                 key: deepLinkData.key,
                 expires: deepLinkData.expires,
             });
-        })().catch((error: unknown) => {
-            handleError(error);
-        });
-    }, [show, deepLinkData, onCancel]);
+        })().catch((error: unknown) => handleError(error, applog));
+    }, [show, deepLinkData, onCancel, handleError, applog]);
 
     console.log('d', deepLinkData);
 

@@ -36,18 +36,31 @@ export default function DekCommonAppModal({
         setShow(false);
         onCancel();
     };
-    const childrenArray = Children.toArray(children);
+    type ChildrenArrayIndicie = ReturnType<typeof Children.toArray>[0];
+    const childrenArray: Array<ChildrenArrayIndicie> = Children.toArray(children);
     // prettier-ignore
-    const bodyChildren = childrenArray.filter((child: ReactNode | ReactElement<DekDivProps>) => {
-        return typeof child !== 'boolean' && typeof child === 'object' && child !== null && 'props' in child;
-    }).map((child: ReactElement<DekDivProps>): ReactElement<DekDivProps> | null => {
-        return child?.props.type === 'DekBody' ? child : null;
+    const bodyChildren: Array<ReactElement<DekDivProps>> = childrenArray.filter<ChildrenArrayIndicie, ReactElement<DekDivProps>>((child: ChildrenArrayIndicie): boolean => {
+        return typeof child !== 'boolean'
+            && typeof child === 'object'
+            && child !== null
+            && 'props' in child
+            && typeof child.props === 'object'
+            && child.props !== null
+            && 'type' in child.props
+            && typeof (child.props as { type?: unknown }).type === 'string'
+            && (child.props as { type: string }).type === 'DekBody';
     });
     // prettier-ignore
-    const footChildren = childrenArray.filter((child: ReactNode | ReactElement<DekDivProps>) => {
-        return typeof child !== 'boolean' && typeof child === 'object' && child !== null && 'props' in child;
-    }).map((child: ReactElement<DekDivProps>): ReactElement<DekDivProps> | null => {
-        return child?.props.type === 'DekFoot' ? child : null;
+    const footChildren: Array<ReactElement<DekDivProps>> = childrenArray.filter<ChildrenArrayIndicie, ReactElement<DekDivProps>>((child: ChildrenArrayIndicie) => {
+        return typeof child !== 'boolean'
+            && typeof child === 'object'
+            && child !== null
+            && 'props' in child
+            && typeof child.props === 'object'
+            && child.props !== null
+            && 'type' in child.props
+            && typeof (child.props as { type?: unknown }).type === 'string'
+            && (child.props as { type: string }).type === 'DekFoot';
     });
     // return the actual envmodal
     // prettier-ignore

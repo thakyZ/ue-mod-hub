@@ -25,9 +25,9 @@ import type { ActiveGame } from '@hooks/use-active-game';
 import useActiveGame from '@hooks/use-active-game';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { CommonAppDataContextType } from '@hooks/use-common-checks';
+import type { CommonChecks } from '@hooks/use-common-checks';
 import type { GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError, parseIntSafe } from '@hooks/use-common-checks';
+import useCommonChecks, { parseIntSafe } from '@hooks/use-common-checks';
 import type { LocaleLeaves, UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { BackgroundOpacityConstraint, Themes } from '@hooks/use-theme-system';
@@ -39,7 +39,7 @@ import checkIsDevEnvironment from '@utils/is-dev-env';
 import wait from '@utils/wait';
 import type { OpenDialogReturnValue } from 'electron';
 import Link from 'next/link';
-import type { Dispatch, HTMLAttributes, MouseEvent, ReactElement, ReactNode, SetStateAction } from 'react';
+import type { Dispatch, HTMLAttributes, MouseEvent, ReactElement, ReactNode, SetStateAction, SVGAttributes } from 'react';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import Carousel from 'react-bootstrap/Carousel';
 
@@ -87,7 +87,7 @@ export default function SettingsPage({
 }: SettingsPageProps): ReactElement<SettingsPageProps> | null {
     const applog: AppLogger = useAppLogger('SettingsPage');
     const { t, tA, changeLanguage, language, VALID_LANGUAGES }: UseLocalizationReturn = useLocalization();
-    const { requiredModulesLoaded, commonAppData }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded, commonAppData, handleError }: CommonChecks = useCommonChecks();
     const [showUE4SSInstall, setShowUE4SSInstall]: UseStatePair<boolean> = useState<boolean>(false);
     // const [showUE4SSSettings, setShowUE4SSSettings]: UseStatePair<boolean> = useState<boolean>(false);
     const [showGameConfig, setShowGameConfig]: UseStatePair<boolean> = useState<boolean>(false);
@@ -101,12 +101,12 @@ export default function SettingsPage({
     const onClickHelp = useCallback((): void => {
         if (!window.ipc) return console.error('ipc not loaded');
         window.ipc.invoke('open-child-window', 'help').catch((error: unknown): void => handleError(error, applog));
-    }, []);
+    }, [applog, handleError]);
 
     const onClickSetup = useCallback((): void => {
         if (!window.ipc) return console.error('ipc not loaded');
         window.ipc.invoke('open-child-window', 'setup').catch((error: unknown): void => handleError(error, applog));
-    }, []);
+    }, [applog, handleError]);
 
     const carouselOptions: CarouselOptions = useMemo(
         (): CarouselOptions => ({
@@ -227,7 +227,7 @@ function SettingsPage_SetupStep({
 }: SettingsPage_SetupStepProps): ReactElement<SettingsPage_SetupStepProps> | null {
     const applog: AppLogger = useAppLogger('SettingsPage_SetupStep');
     const { t, tA }: UseLocalizationReturn = useLocalization();
-    const { requiredModulesLoaded, commonAppData }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded, commonAppData, handleError }: CommonChecks = useCommonChecks();
     const cache_dir: string | null = useMemo((): string | null => commonAppData?.cache, [commonAppData?.cache]);
     const game_path: string | undefined = useMemo(
         (): string | undefined => commonAppData?.selectedGame?.path,
@@ -243,15 +243,22 @@ function SettingsPage_SetupStep({
     );
 
     const handleUE4SSInstall: VoidFunction = useCallback((): void => {
-        if (!requiredModulesLoaded) return;
-        if (!cache_dir || !game_path || !game) return;
-        (async () => {
+        (async (): Promise<void> => {
+            if (!requiredModulesLoaded) return;
+            if (!cache_dir || !game_path || !game) return;
             setShowUE4SSInstall(true);
             await window.palhub('downloadAndInstallUE4SS', cache_dir, game_path);
             // prettier-ignore
             const maybe_data: ValidateGamePathReturnType = await window.palhub('validateGamePath', game_path);
-            if (maybe_data.type === '{invalid-path}') throw new Error(`Failed to validate game path at ${game_path}, got ${maybe_data.type}`, { cause: maybe_data });
-            if (maybe_data.type === '{UNKNOWN}') throw new Error(`Failed to validate game path at ${game_path}, got ${maybe_data.type}`, { cause: maybe_data });
+            // if (maybe_data.type === '{invalid-path}' || maybe_data.type === '{UNKNOWN}') return;
+            if (maybe_data.type === '{invalid-path}')
+                throw new Error(`Failed to validate game path at ${game_path}, got ${maybe_data.type}`, {
+                    cause: maybe_data,
+                });
+            if (maybe_data.type === '{UNKNOWN}')
+                throw new Error(`Failed to validate game path at ${game_path}, got ${maybe_data.type}`, {
+                    cause: maybe_data,
+                });
             if (maybe_data && 'has_exe' in maybe_data && maybe_data.has_exe === true) {
                 for (const prop of Object.keys(maybe_data)) {
                     if (!Object.hasOwn(game, prop)) continue;
@@ -260,14 +267,14 @@ function SettingsPage_SetupStep({
             }
             await wait(COMMON_TIMEOUT_DURATION); // small delay to allow the process to finish
             setShowUE4SSInstall(false);
-        })().catch((error: unknown) => handleError(error, applog));
-    }, [requiredModulesLoaded]);
+        })().catch((error: unknown): void => handleError(error, applog));
+    }, [requiredModulesLoaded, cache_dir, game_path, game, setShowUE4SSInstall, handleError, applog]);
 
     // determine the current setup step
 
     const pClasses: string = 'px-3 px-xl-5 mb-0';
     const dangerCard: string = 'card bg-danger border-danger2 border my-4 p-3 text-center';
-    const successCard: string = 'card bg-success border-success2 border my-4 p-3 text-center';
+    // const successCard: string = 'card bg-success border-success2 border my-4 p-3 text-center';
 
     useEffect((): void => {
         (async (): Promise<void> => {
@@ -285,36 +292,37 @@ function SettingsPage_SetupStep({
             }
             console.log('newstep', newstep);
             setStep(newstep);
-        })().catch((error: unknown) => handleError(error, applog));
-    }, [game, game_path, api_key, cache_dir]);
+        })().catch((error: unknown): void => handleError(error, applog));
+    }, [game, game_path, api_key, cache_dir, setStep, handleError, applog]);
 
     // console.log(game)
     // console.log(t(`games.${game.id}.name`))
 
     switch (step) {
         case 0:
+            // return (
+            //     <div className={successCard}>
+            //         <h4 className="mb-0">
+            //             <strong>{t('/settings.setup.ready.head', { game })}</strong>
+            //         </h4>
+            //         {tA('/settings.setup.ready.body' as LocaleLeaves, { game }).map(
+            //             (text: string, i: number): ReactElement<HTMLAttributes<HTMLParagraphElement>> => (
+            //                 <p key={i} className={pClasses}>
+            //                     {text}
+            //                 </p>
+            //             )
+            //         )}
+            //         <div className="row gap-2 px-3 mt-3">
+            //             <Link href="/play" className="col btn btn-dark p-3">
+            //                 <strong>{t('/settings.buttons.play-game', { game })}</strong>
+            //             </Link>
+            //             <Link href="/mods" className="col btn btn-dark p-3">
+            //                 <strong>{t('/settings.buttons.add-mods', { game })}</strong>
+            //             </Link>
+            //         </div>
+            //     </div>
+            // );
             return null;
-            // prettier-ignore
-            return (
-                <div className={successCard}>
-                    <h4 className="mb-0">
-                        <strong>{t('/settings.setup.ready.head', { game })}</strong>
-                    </h4>
-                    {(tA('/settings.setup.ready.body' as LocaleLeaves, { game }) as unknown as string[]).map((text: string, i: number): ReactElement<HTMLAttributes<HTMLParagraphElement>> => (
-                        <p key={i} className={pClasses}>
-                            {text}
-                        </p>
-                    ))}
-                    <div className="row gap-2 px-3 mt-3">
-                        <Link href="/play" className="col btn btn-dark p-3">
-                            <strong>{t('/settings.buttons.play-game', { game })}</strong>
-                        </Link>
-                        <Link href="/mods" className="col btn btn-dark p-3">
-                            <strong>{t('/settings.buttons.add-mods', { game })}</strong>
-                        </Link>
-                    </div>
-                </div>
-            );
         case 1:
             // prettier-ignore
             return (
@@ -408,7 +416,9 @@ function SettingsPage_ApplicationRequirements({
         updateCachePath,
         updateNexusApiKey,
         refreshCommonDataWithRedirect,
-    }: CommonAppDataContextType = useCommonChecks();
+        handleError,
+    }: CommonChecks = useCommonChecks();
+    const applog: AppLogger = useAppLogger('SettingsPage_ApplicationRequirements');
     const [cacheDirectory, setCacheDirectory]: UseStatePair<string | null> = useState<string | null>(commonAppData?.cache);
     // const [cacheIsValid, setCacheIsValid]: UseStatePair<boolean> = useState<boolean>(false);
     const [nexusApiKey, setNexusApiKey]: UseStatePair<string | null> = useState<string | null>(commonAppData?.apis?.nexus);
@@ -420,14 +430,17 @@ function SettingsPage_ApplicationRequirements({
     const [showNexusKey, setShowNexusKey]: UseStatePair<boolean> = useState<boolean>(false);
     const { t }: UseLocalizationReturn = useLocalization();
 
-    const onUpdateCacheDirectory = useCallback((_name: string | null, new_value: string): void => {
-        (async (): Promise<void> => {
-            await updateCachePath(new_value);
-            // TODO: Double check if this is then-able.
-            setCacheDirectory(new_value);
-            await refreshCommonDataWithRedirect();
-        })().catch((error: unknown) => handleError(error));
-    }, []);
+    const onUpdateCacheDirectory: VoidFunctionWithArgs<[name: string | null, new_value: string]> = useCallback(
+        (_name: string | null, new_value: string): void => {
+            (async (): Promise<void> => {
+                await updateCachePath(new_value);
+                // TODO: Double check if this is then-able.
+                setCacheDirectory(new_value);
+                await refreshCommonDataWithRedirect();
+            })().catch((error: unknown): void => handleError(error, applog));
+        },
+        [updateCachePath, refreshCommonDataWithRedirect, handleError, applog]
+    );
     // open file dialog to select cache directory
     const onClickPathInput: PropsMouseEventHandler<unknown, Element> = useCallback(
         (_event: PropsMouseEvent<unknown, Element>): void => {
@@ -440,9 +453,9 @@ function SettingsPage_ApplicationRequirements({
                 if (!result.canceled && !!result.filePaths[0]) {
                     onUpdateCacheDirectory(null, result.filePaths[0]);
                 }
-            })().catch((error: unknown) => handleError(error));
+            })().catch((error: unknown): void => handleError(error, applog));
         },
-        []
+        [onUpdateCacheDirectory, t, handleError, applog]
     );
 
     // updates the nexus api key when the input changes and sets a timeout to save it
@@ -467,9 +480,17 @@ function SettingsPage_ApplicationRequirements({
                 setNexusApiKeyHandler(setTimeout((): void => setShowNexusKey(false), COMMON_TIMEOUT_DURATION));
                 const validation_result: IValidateKeyResponse = await window.nexus(new_value, 'getValidationResult');
                 setNexusKeyIsPremium(validation_result?.is_premium ?? false);
-            })().catch((error: unknown): void => handleError(error));
+            })().catch((error: unknown): void => handleError(error, applog));
         },
-        [nexusApiKeyHandler, COMMON_TIMEOUT_DURATION]
+        [
+            updateNexusApiKey,
+            refreshCommonDataWithRedirect,
+            nexusApiKeyHandler,
+            setSettingsPageID,
+            handleError,
+            applog,
+            // COMMON_TIMEOUT_DURATION,
+        ]
     );
     // toggles the visibility of the nexus api key
     const onToggleShowNexusKey: VoidFunction = useCallback((): void => {
@@ -485,8 +506,8 @@ function SettingsPage_ApplicationRequirements({
             setNexusKeyIsValid(valid_key_user !== null);
             const validation_result: IValidateKeyResponse = await window.nexus(nexusApiKey, 'getValidationResult');
             setNexusKeyIsPremium(validation_result?.is_premium ?? false);
-        }).catch((error: unknown): void => handleError(error));
-    }, [nexusApiKey]);
+        }).catch((error: unknown): void => handleError(error, applog));
+    }, [handleError, nexusApiKey, requiredModulesLoaded, updateNexusApiKey, applog]);
 
     useEffect((): void => {
         if (cacheDirectory) return;
@@ -494,8 +515,8 @@ function SettingsPage_ApplicationRequirements({
             const path: string = await window.ipc.invoke('get-path', 'documents');
             const newpath: string = await window.palhub('joinPath', path, 'ModHubCache');
             onUpdateCacheDirectory(null, newpath);
-        })().catch((error: unknown): void => handleError(error));
-    }, [cacheDirectory]);
+        })().catch((error: unknown): void => handleError(error, applog));
+    }, [cacheDirectory, handleError, onUpdateCacheDirectory, applog]);
 
     if (!requiredModulesLoaded) return null;
     return (
@@ -552,7 +573,7 @@ function SettingsPage_ApplicationRequirements({
 function SettingsPage_UseNexusDeepLinks(): ReactElement {
     const applog: AppLogger = useAppLogger('SettingsPage_SetupStep');
     const { t }: UseLocalizationReturn = useLocalization();
-    const { requiredModulesLoaded }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded, handleError }: CommonChecks = useCommonChecks();
 
     type ConfigDataStorePartial = Pick<ConfigDataStore, 'nxm-links'>;
     // app options implemented by DEAP <3
@@ -570,7 +591,7 @@ function SettingsPage_UseNexusDeepLinks(): ReactElement {
                 setSettings((current: ConfigDataStorePartial): ConfigDataStorePartial => ({ ...current, [key]: value }));
             })().catch((error: unknown): void => handleError(error, applog));
         },
-        [requiredModulesLoaded]
+        [applog, handleError, requiredModulesLoaded]
     );
 
     // load initial settings from store
@@ -581,7 +602,7 @@ function SettingsPage_UseNexusDeepLinks(): ReactElement {
                 'nxm-links': await window.uStore.get('nxm-links', false),
             } as ConfigDataStore);
         })().catch((error: unknown): void => handleError(error, applog));
-    }, [requiredModulesLoaded]);
+    }, [applog, handleError, requiredModulesLoaded]);
 
     return (
         <ENVEntry
@@ -596,7 +617,7 @@ function SettingsPage_UseNexusDeepLinks(): ReactElement {
 function SettingsPage_ApplicationCustomize(): ReactElement {
     const applog: AppLogger = useAppLogger('SettingsPage_ApplicationCustomize');
     const { t }: UseLocalizationReturn = useLocalization();
-    const { requiredModulesLoaded }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded, handleError }: CommonChecks = useCommonChecks();
 
     type ConfigDataStorePartial = Pick<
         ConfigDataStore,
@@ -622,7 +643,7 @@ function SettingsPage_ApplicationCustomize(): ReactElement {
                 setSettings((current: ConfigDataStorePartial): ConfigDataStorePartial => ({ ...current, [key]: value }));
             })().catch((error: unknown): void => handleError(error, applog));
         },
-        [requiredModulesLoaded]
+        [applog, handleError, requiredModulesLoaded]
     );
 
     // load initial settings from store
@@ -638,7 +659,7 @@ function SettingsPage_ApplicationCustomize(): ReactElement {
                 'do-update': await window.uStore.get('do-update', false),
             });
         })().catch((error: unknown): void => handleError(error, applog));
-    }, [requiredModulesLoaded]);
+    }, [applog, handleError, requiredModulesLoaded]);
 
     return (
         <Fragment>
@@ -693,7 +714,7 @@ export declare interface SettingsPage_ThemeProps {
 }
 
 function SettingsPage_Theme({ ThemeController }: SettingsPage_ThemeProps): ReactElement<SettingsPage_ThemeProps> | null {
-    const { requiredModulesLoaded /* , commonAppData */ }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded /* , commonAppData */ }: CommonChecks = useCommonChecks();
     // const game_id: Games | undefined = commonAppData?.selectedGame?.id;
     const { t, tA }: UseLocalizationReturn = useLocalization();
 
@@ -787,7 +808,7 @@ function SettingsPage_Game({
         // commonAppData,
         // updateSelectedGame,
         // refreshCommonDataWithRedirect,
-    }: CommonAppDataContextType = useCommonChecks();
+    }: CommonChecks = useCommonChecks();
     // const api_key: string | null = commonAppData?.apis?.nexus;
 
     const {
@@ -809,7 +830,7 @@ function SettingsPage_Game({
             setTempGame(event?.props ?? null);
             setShowGameConfig(true);
         },
-        []
+        [setShowGameConfig, setTempGame]
     );
 
     if (!requiredModulesLoaded) return null;
@@ -853,8 +874,13 @@ function SettingsPage_Game({
     );
 }
 
-function SimpleCheckbox({ checked = false, text = 'Checkbox' }) {
-    const common = { fill: 'currentColor', height: '1rem' };
+export declare interface SimpleCheckboxProps {
+    checked?: boolean;
+    text?: string;
+}
+
+function SimpleCheckbox({ checked = false, text = 'Checkbox' }: SimpleCheckboxProps): ReactElement<SimpleCheckboxProps> {
+    const common: SVGAttributes<SVGElement> = { fill: 'currentColor', height: '1rem' };
     return (
         <div className="px-1 text-dark">
             {checked && <CommonIcons.check_square {...common} />}

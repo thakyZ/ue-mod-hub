@@ -12,9 +12,9 @@ export default function GradientBanner({
     b = 'secondary',
     children,
 }: GradientBannerProps): ReactElement<HTMLAttributes<HTMLDivElement>> {
-    const gradient_a = `bg-gradient-${a}-to-${b} border-${a}`;
-    const gradient_b = `bg-${b} border-${a}`;
-    const gradient_c = `bg-gradient-${b}-to-${a} border-${a}`;
+    const gradient_a: string = `bg-gradient-${a}-to-${b} border-${a}`;
+    const gradient_b: string = `bg-${b} border-${a}`;
+    const gradient_c: string = `bg-gradient-${b}-to-${a} border-${a}`;
     return (
         <div className="position-relative">
             <div className="row mb-2" style={{ height }}>

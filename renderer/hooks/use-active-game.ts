@@ -1,4 +1,4 @@
-import type { CommonAppDataContextType, GameInformation } from '@hooks/use-common-checks';
+import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
 import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
@@ -15,7 +15,7 @@ export declare interface ActiveGame {
 }
 
 export default function useActiveGame(): ActiveGame {
-    const { commonAppData }: CommonAppDataContextType = useCommonChecks();
+    const { commonAppData }: CommonChecks = useCommonChecks();
     const { t }: UseLocalizationReturn = useLocalization();
 
     const gamesArray: GamesAarray = useMemo((): GamesAarray => {

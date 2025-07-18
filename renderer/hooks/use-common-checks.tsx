@@ -6,7 +6,7 @@
 // import assert from 'node:assert';
 
 import type { AppLogger } from '@hooks/use-app-logger';
-import useAppLogger from '@hooks/use-app-logger';
+// import useAppLogger from '@hooks/use-app-logger';
 import type { DeepLinkNXMType, DeepLinkType } from '@hooks/use-deep-link-listener';
 import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
@@ -25,7 +25,7 @@ import type { VoidFunctionWithArgs } from '@typed/common';
 import type { ValidateGamePathReturnType } from '@typed/palhub';
 import type { NextRouter } from 'next/router';
 import { useRouter } from 'next/router';
-import type { Context, Dispatch, HTMLAttributes, SetStateAction } from 'react';
+import type { Context, Dispatch, HTMLAttributes, ReactElement, SetStateAction } from 'react';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 export function isArray(value: unknown): value is unknown[] {
@@ -86,27 +86,6 @@ export function ensureError(error: unknown): Error {
             : new Error(error.toString()); // eslint-disable-line @typescript-eslint/no-base-to-string
 }
 
-export function handleError(
-    error: unknown,
-    logger?: AppLogger | VoidFunctionWithArgs<[message: string]> | Dispatch<SetStateAction<string>>,
-    type: 0 | 1 | 2 = 0
-): void {
-    if (!logger) {
-        logger = useAppLogger('HandleErrorBackup');
-        type = 0;
-    }
-    error = ensureError(error);
-    hardAssertIsType<Error>(error);
-    if (type === 0) void logger('error', error);
-    else if (type === 1) {
-        hardAssertIsType<VoidFunctionWithArgs<[message: string]>>(logger);
-        void logger(error.stack ?? `${error.name} ${error.message}`);
-    } else {
-        hardAssertIsType<Dispatch<SetStateAction<string>>>(logger);
-        void logger(error.stack ?? `${error.name} ${error.message}`);
-    }
-}
-
 export function isNXMDeepLink(value: unknown): value is DeepLinkNXMType {
     // game_slug: string;
     // mod_id: number;
@@ -153,20 +132,29 @@ export declare type SelectedGameCallback = (selectedGame: GameInformation | null
 
 export declare type UpdateSelectedGamePathCallback = (selectedGame: GameInformation) => Promise<void>;
 
-export declare interface CommonAppDataContextType {
+export declare interface CommonChecks {
     requiredModulesLoaded: boolean;
     commonAppData: CommonAppDataDataType;
     refreshApis: PromiseVoidFunction;
     refreshCache: PromiseVoidFunction;
-    refreshGames: (ignoreRequired?: boolean) => Promise<ConfigDataStoreGames | undefined>;
-    updateCachePath: (new_value: string) => Promise<void>;
-    updateNexusApiKey: (new_value: string, validate?: KeyUserCallback) => Promise<void>;
+    refreshGames: PromiseTypeFunctionWithArgs<[ignoreRequired?: boolean], ConfigDataStoreGames | undefined>;
+    updateCachePath: PromiseVoidFunctionWithArgs<[new_value: string]>;
+    updateNexusApiKey: PromiseVoidFunctionWithArgs<[new_value: string, validate?: KeyUserCallback]>;
     refreshCommonDataWithRedirect: PromiseVoidFunction;
-    updateSelectedGame: (tempGame?: GameInformation | null, callmemaybe?: SelectedGameCallback) => Promise<void>;
-    // prettier-ignore
-    updateSelectedGamePath: (tempGame: GameInformation, new_path: string, callmemaybe?: UpdateSelectedGamePathCallback) => Promise<void>;
-    // prettier-ignore
-    forgetGame: (tempGame: GameInformation, callmemaybe?: PromiseVoidFunction) => Promise<void>;
+    updateSelectedGame: PromiseVoidFunctionWithArgs<
+        [tempGame?: GameInformation | null, callmemaybe?: SelectedGameCallback]
+    >;
+    updateSelectedGamePath: PromiseVoidFunctionWithArgs<
+        [tempGame: GameInformation, new_path: string, callmemaybe?: UpdateSelectedGamePathCallback]
+    >;
+    forgetGame: PromiseVoidFunctionWithArgs<[tempGame: GameInformation, callmemaybe?: PromiseVoidFunction]>;
+    handleError: VoidFunctionWithArgs<
+        [
+            error: unknown,
+            logger: AppLogger | VoidFunctionWithArgs<[message: string]> | Dispatch<SetStateAction<string>>,
+            type?: 0 | 1 | 2,
+        ]
+    >;
 }
 
 export function parseIntSafe(value: string | number | undefined, radix: number = 10): number | undefined {
@@ -180,14 +168,18 @@ export function parseIntSafeArray(values: string[] | number[] | undefined, radix
 export declare type CommonAppDataProviderProps = Pick<HTMLAttributes<HTMLDivElement>, 'children'>;
 
 // Context for Localization
-const CommonAppDataContext: Context<CommonAppDataContextType> = createContext<CommonAppDataContextType>(undefined!);
+const CommonAppDataContext: Context<CommonChecks> = createContext<CommonChecks>(undefined!);
 
 // CommonAppData Provider Component
-export const CommonAppDataProvider = ({ children }: CommonAppDataProviderProps) => {
+export const CommonAppDataProvider = ({
+    children,
+}: CommonAppDataProviderProps): ReactElement<CommonAppDataProviderProps> => {
     const { t, /* tA, */ ready }: UseLocalizationReturn = useLocalization();
     // const applog: AppLogger = useAppLogger('hooks/use-common-checks');
     const [requiredModulesLoaded, setRequiredModulesLoaded]: UseStatePair<boolean> = useState<boolean>(false);
     const [commonAppData, setCommonAppData] = useState<CommonAppDataDataType | null>(null);
+    const router: NextRouter = useRouter();
+
     const updateCommonAppData: VoidFunctionWithArgs<
         [key: keyof CommonAppDataDataType, value: Partial<CommonAppDataDataType[keyof CommonAppDataDataType]>]
     > = useCallback(
@@ -206,63 +198,86 @@ export const CommonAppDataProvider = ({ children }: CommonAppDataProviderProps) 
         []
     );
 
-    const refreshApis: PromiseVoidFunction = useCallback(async (): Promise<void> => {
+    const handleError: CommonChecks['handleError'] = useCallback(
+        (
+            error: unknown,
+            logger: AppLogger | VoidFunctionWithArgs<[message: string]> | Dispatch<SetStateAction<string>>,
+            type: 0 | 1 | 2 = 0
+        ): void => {
+            // if (!logger) {
+            //     logger = useAppLogger('HandleErrorBackup');
+            //     type = 0;
+            // }
+            error = ensureError(error);
+            hardAssertIsType<Error>(error);
+            if (type === 0) void logger('error', error);
+            else if (type === 1) {
+                hardAssertIsType<VoidFunctionWithArgs<[message: string]>>(logger);
+                void logger(error.stack ?? `${error.name} ${error.message}`);
+            } else {
+                hardAssertIsType<Dispatch<SetStateAction<string>>>(logger);
+                void logger(error.stack ?? `${error.name} ${error.message}`);
+            }
+        },
+        []
+    );
+
+    const refreshApis: CommonChecks['refreshApis'] = useCallback(async (): Promise<void> => {
         if (!requiredModulesLoaded) return;
         const apis: ConfigDataStoreApiKeys = await window.uStore.get('api-keys');
         updateCommonAppData('apis', apis);
-    }, [requiredModulesLoaded]);
+    }, [requiredModulesLoaded, updateCommonAppData]);
 
-    const refreshCache: PromiseVoidFunction = useCallback(async (): Promise<void> => {
+    const refreshCache: CommonChecks['refreshCache'] = useCallback(async (): Promise<void> => {
         if (!requiredModulesLoaded) return;
         const cache: string | null | undefined = await window.uStore.get('app-cache');
         if (cache !== undefined) updateCommonAppData('cache', cache);
-    }, [requiredModulesLoaded]);
+    }, [requiredModulesLoaded, updateCommonAppData]);
 
-    const refreshGames: PromiseTypeFunctionWithArgs<[ignoreRequired?: boolean], ConfigDataStoreGames | undefined> =
-        useCallback(
-            async (ignoreRequired: boolean = false): Promise<ConfigDataStoreGames | undefined> => {
-                if (!ignoreRequired && !requiredModulesLoaded) return;
-                const games: ConfigDataStoreGames = await window.uStore.get('games');
-                // remove all empty (games that no longer seem to exist at path) games just in case;
-                let changed: boolean = false;
-                for (const a of Object.keys(games)) {
-                    // if (!Object.prototype.hasOwnProperty.call(games, key)) continue;
-                    if (a === 'active') continue;
-                    const game_id: Games = a as Games;
-                    if (!games[game_id]) {
-                        delete games[game_id];
-                        changed = true;
-                    }
-                    for (const b in games[game_id]) {
-                        if (b === '{UNKNOWN}') {
-                            delete games[game_id][b as GamePlatforms];
-                            changed = true;
-                        }
-                        for (const c in games[game_id]?.[b as GamePlatforms]) {
-                            if (c === 'undefined') {
-                                // delete games[game_id]?.[b as GamePlatforms]?.[c as LaunchTypes];
-                                // changed = true;
-                            }
-                        }
-                    }
-                }
-                type ActiveGamesTuple = [a: Games, b?: Games | ErroredGames, c?: Games | ErroredGames];
-                const [a, b, c]: ActiveGamesTuple | undefined = games?.active?.split('.') as ActiveGamesTuple;
-                if (b === '{UNKNOWN}' || c === 'undefined') {
-                    games.active = null;
-                    delete games[a];
+    const refreshGames: CommonChecks['refreshGames'] = useCallback(
+        async (ignoreRequired: boolean = false): Promise<ConfigDataStoreGames | undefined> => {
+            if (!ignoreRequired && !requiredModulesLoaded) return;
+            const games: ConfigDataStoreGames = await window.uStore.get('games');
+            // remove all empty (games that no longer seem to exist at path) games just in case;
+            let changed: boolean = false;
+            for (const a of Object.keys(games)) {
+                // if (!Object.prototype.hasOwnProperty.call(games, key)) continue;
+                if (a === 'active') continue;
+                const game_id: Games = a as Games;
+                if (!games[game_id]) {
+                    delete games[game_id];
                     changed = true;
                 }
-                if (changed) {
-                    await window.uStore.set('games', games);
-                    // TODO: Test if await is required, the original code ignored the promise.
-                    void router.push('/settings');
+                for (const b in games[game_id]) {
+                    if (b === '{UNKNOWN}') {
+                        delete games[game_id][b as GamePlatforms];
+                        changed = true;
+                    }
+                    for (const c in games[game_id]?.[b as GamePlatforms]) {
+                        if (c === 'undefined') {
+                            // delete games[game_id]?.[b as GamePlatforms]?.[c as LaunchTypes];
+                            // changed = true;
+                        }
+                    }
                 }
-                updateCommonAppData('games', games);
-                return games;
-            },
-            [requiredModulesLoaded]
-        );
+            }
+            type ActiveGamesTuple = [a: Games, b?: Games | ErroredGames, c?: Games | ErroredGames];
+            const [a, b, c]: ActiveGamesTuple | undefined = games?.active?.split('.') as ActiveGamesTuple;
+            if (b === '{UNKNOWN}' || c === 'undefined') {
+                games.active = null;
+                delete games[a];
+                changed = true;
+            }
+            if (changed) {
+                await window.uStore.set('games', games);
+                // TODO: Test if await is required, the original code ignored the promise.
+                void router.push('/settings');
+            }
+            updateCommonAppData('games', games);
+            return games;
+        },
+        [requiredModulesLoaded, router, updateCommonAppData]
+    );
 
     type GetStoreIDType = <
         TPrefixGames extends boolean = boolean,
@@ -296,28 +311,26 @@ export const CommonAppDataProvider = ({ children }: CommonAppDataProviderProps) 
         []
     );
 
-    const updateCachePath: PromiseVoidFunctionWithArgs<[new_path: string, callmemaybe?: IsValidCallback]> = useCallback(
+    const updateCachePath: CommonChecks['updateCachePath'] = useCallback(
         async (new_path: string, callmemaybe: IsValidCallback = async (): Promise<void> => {}): Promise<void> => {
             const is_valid: boolean = await window.palhub('checkIsValidFolderPath', new_path);
             await window.uStore.set('app-cache', new_path);
             await refreshCache();
             await callmemaybe(is_valid);
         },
-        []
+        [refreshCache]
     );
 
-    const updateNexusApiKey: PromiseVoidFunctionWithArgs<[new_key: string, callmemaybe?: KeyUserCallback]> = useCallback(
+    const updateNexusApiKey: CommonChecks['updateNexusApiKey'] = useCallback(
         async (new_key: string, callmemaybe: KeyUserCallback = async (): Promise<void> => {}): Promise<void> => {
             const key_user: IValidateKeyResponse = await window.nexus(new_key, 'setKey', new_key);
             await window.uStore.set<string>('api-keys.nexus', new_key);
             await refreshApis();
             await callmemaybe(key_user);
         },
-        []
+        [refreshApis]
     );
-    const updateSelectedGame: PromiseVoidFunctionWithArgs<
-        [tempGame?: GameInformation | null, callmemaybe?: SelectedGameCallback]
-    > = useCallback(
+    const updateSelectedGame: CommonChecks['updateSelectedGame'] = useCallback(
         async (
             tempGame: GameInformation | null = null,
             callmemaybe: SelectedGameCallback = async (): Promise<void> => {}
@@ -327,9 +340,15 @@ export const CommonAppDataProvider = ({ children }: CommonAppDataProviderProps) 
             console.log('updating selected game:', store_id);
             const path: string = (await window.uStore.get(store_id)) ?? '';
             const data: ValidateGamePathReturnType = await window.palhub('validateGamePath', path);
-            if (data.type === '{invalid-path}') throw new Error(`Failed to validate game path at ${path}, got ${data.type}`, { cause: data });
-            if (data.type === '{UNKNOWN}') throw new Error(`Failed to validate game path at ${path}, got ${data.type}`, { cause: data });
-            if (!('id' in data)) throw new Error(`Failed to validate game path at ${path}, invalid type (Property 'id' does not exist in data)`, { cause: data });
+            if (data.type === '{invalid-path}')
+                throw new Error(`Failed to validate game path at ${path}, got ${data.type}`, { cause: data });
+            if (data.type === '{UNKNOWN}')
+                throw new Error(`Failed to validate game path at ${path}, got ${data.type}`, { cause: data });
+            if (!('id' in data))
+                throw new Error(
+                    `Failed to validate game path at ${path}, invalid type (Property 'id' does not exist in data)`,
+                    { cause: data }
+                );
             const idname = { id: game_id, name: t(`games.${data.id}.name` as `games.generic.name`), active: true };
             const selectedGame: GameInformation = { ...idname, ...data };
             updateCommonAppData('selectedGame', selectedGame);
@@ -340,11 +359,9 @@ export const CommonAppDataProvider = ({ children }: CommonAppDataProviderProps) 
 
             await callmemaybe(selectedGame);
         },
-        [t]
+        [t, getStoreID, updateCommonAppData]
     );
-    const updateSelectedGamePath: PromiseVoidFunctionWithArgs<
-        [tempGame: GameInformation, new_path: string, callmemaybe?: UpdateSelectedGamePathCallback]
-    > = useCallback(
+    const updateSelectedGamePath: CommonChecks['updateSelectedGamePath'] = useCallback(
         async (
             tempGame: GameInformation,
             new_path: string,
@@ -359,9 +376,15 @@ export const CommonAppDataProvider = ({ children }: CommonAppDataProviderProps) 
 
             // validate the new path and update the selected game data
             const data: ValidateGamePathReturnType = await window.palhub('validateGamePath', new_path);
-            if (data.type === '{invalid-path}') throw new Error(`Failed to validate game path at ${new_path}, got ${data.type}`, { cause: data });
-            if (data.type === '{UNKNOWN}') throw new Error(`Failed to validate game path at ${new_path}, got ${data.type}`, { cause: data });
-            if (!('id' in data)) throw new Error(`Failed to validate game path at ${new_path}, invalid type (Property 'id' does not exist in data)`, { cause: data });
+            if (data.type === '{invalid-path}')
+                throw new Error(`Failed to validate game path at ${new_path}, got ${data.type}`, { cause: data });
+            if (data.type === '{UNKNOWN}')
+                throw new Error(`Failed to validate game path at ${new_path}, got ${data.type}`, { cause: data });
+            if (!('id' in data))
+                throw new Error(
+                    `Failed to validate game path at ${new_path}, invalid type (Property 'id' does not exist in data)`,
+                    { cause: data }
+                );
             const selectedGame: GameInformation = {
                 ...data,
                 name: t(`games.${data.id}.name` as `games.generic.name`),
@@ -388,76 +411,81 @@ export const CommonAppDataProvider = ({ children }: CommonAppDataProviderProps) 
                 await refreshGames();
             }
         },
-        [t, commonAppData?.games?.active, refreshGames]
+        [t, /* commonAppData?.games?.active, */ refreshGames, getStoreID, updateCommonAppData]
     );
 
-    const forgetGame: PromiseVoidFunctionWithArgs<[tempGame: GameInformation, callmemaybe?: PromiseVoidFunction]> =
-        useCallback(
-            async (
-                tempGame: GameInformation,
-                callmemaybe: PromiseVoidFunction = async (): Promise<void> => {}
-            ): Promise<void> => {
-                const game_id: Games | ErroredGames = tempGame?.id ?? 'undefined';
-                const store_id: `games.${Games}.${GamePlatforms}.${LaunchTypes}` = getStoreID(game_id, tempGame);
-                await window.uStore.delete(store_id);
-                await callmemaybe();
-                await refreshGames();
-            },
-            [refreshGames]
-        );
+    const forgetGame: CommonChecks['forgetGame'] = useCallback(
+        async (
+            tempGame: GameInformation,
+            callmemaybe: PromiseVoidFunction = async (): Promise<void> => {}
+        ): Promise<void> => {
+            const game_id: Games | ErroredGames = tempGame?.id ?? 'undefined';
+            const store_id: `games.${Games}.${GamePlatforms}.${LaunchTypes}` = getStoreID(game_id, tempGame);
+            await window.uStore.delete(store_id);
+            await callmemaybe();
+            await refreshGames();
+        },
+        [refreshGames, getStoreID]
+    );
 
     //
     // function to redirect to settings if required modules are loaded
     //
-    const router: NextRouter = useRouter();
-    const refreshCommonDataWithRedirect: PromiseVoidFunction = useCallback(async (): Promise<void> => {
-        await new Promise<void>((r: PromiseResolve<void>): NodeJS.Timeout => setTimeout(r, 250));
-        // get the api keys, cache, and games
-        const apis: ConfigDataStoreApiKeys = await window.uStore.get('api-keys');
-        const cache: string | null = await window.uStore.get('app-cache');
-        const games: ConfigDataStoreGames = await window.uStore.get('games');
-        // const games = refreshGames(true);
+    const refreshCommonDataWithRedirect: CommonChecks['refreshCommonDataWithRedirect'] =
+        useCallback(async (): Promise<void> => {
+            await new Promise<void>((r: PromiseResolve<void>): NodeJS.Timeout => setTimeout(r, 250));
+            // get the api keys, cache, and games
+            const apis: ConfigDataStoreApiKeys = await window.uStore.get('api-keys');
+            const cache: string | null = await window.uStore.get('app-cache');
+            const games: ConfigDataStoreGames = await window.uStore.get('games');
+            // const games = refreshGames(true);
 
-        // if no api keys are set, redirect to settings
-        if (Object.values(apis).includes(null)) void router.push('/settings');
-        // if no cache is set, redirect to settings
-        if (!cache) void router.push('/settings');
+            // if no api keys are set, redirect to settings
+            if (Object.values(apis).includes(null)) void router.push('/settings');
+            // if no cache is set, redirect to settings
+            if (!cache) void router.push('/settings');
 
-        // check if the selected game is valid and set the data if it is
-        let selectedGame: Partial<GameInformation> | null = null;
-        if (games?.active) {
-            try {
-                const game_path: string = await window.uStore.get<string>(`games.${games.active}`);
-                // const game_path = games[games.active];
-                const data: ValidateGamePathReturnType = await window.palhub('validateGamePath', game_path);
-                
-                if (data.type === '{invalid-path}') throw new Error(`Failed to validate game path at ${game_path}, got ${data.type}`, { cause: data });
-                if (data.type === '{UNKNOWN}') throw new Error(`Failed to validate game path at ${game_path}, got ${data.type}`, { cause: data });
-                if (!('id' in data)) throw new Error(`Failed to validate game path at ${game_path}, invalid type (Property 'id' does not exist in data)`, { cause: data });
-                selectedGame = { ...data, name: t(`games.${games.active}.name` as `games.generic.name`) };
-                // initialize the nexus api with the selected game's slug
-                const slug: string = selectedGame.map_data!.providers.nexus;
-                if (apis.nexus) await window.nexus(apis.nexus, 'setGame', slug);
-                // set the commonly used app datas
-                setCommonAppData(
-                    (_prev: CommonAppDataDataType | null): CommonAppDataDataType =>
-                        ({ apis, cache, games, selectedGame }) as CommonAppDataDataType
-                );
-            } catch (error) {
-                console.error(error);
+            // check if the selected game is valid and set the data if it is
+            let selectedGame: Partial<GameInformation> | null = null;
+            if (games?.active) {
+                try {
+                    const game_path: string = await window.uStore.get<string>(`games.${games.active}`);
+                    // const game_path = games[games.active];
+                    const data: ValidateGamePathReturnType = await window.palhub('validateGamePath', game_path);
+
+                    if (data.type === '{invalid-path}')
+                        throw new Error(`Failed to validate game path at ${game_path}, got ${data.type}`, { cause: data });
+                    if (data.type === '{UNKNOWN}')
+                        throw new Error(`Failed to validate game path at ${game_path}, got ${data.type}`, { cause: data });
+                    if (!('id' in data))
+                        throw new Error(
+                            `Failed to validate game path at ${game_path}, invalid type (Property 'id' does not exist in data)`,
+                            { cause: data }
+                        );
+                    selectedGame = { ...data, name: t(`games.${games.active}.name` as `games.generic.name`) };
+                    // initialize the nexus api with the selected game's slug
+                    const slug: string = selectedGame.map_data!.providers.nexus;
+                    if (apis.nexus) await window.nexus(apis.nexus, 'setGame', slug);
+                    // set the commonly used app datas
+                    setCommonAppData(
+                        (_prev: CommonAppDataDataType | null): CommonAppDataDataType =>
+                            ({ apis, cache, games, selectedGame }) as CommonAppDataDataType
+                    );
+                } catch (error) {
+                    console.error(error);
+                }
+            } else {
+                void router.push('/settings');
             }
-        } else {
-            void router.push('/settings');
-        }
-        // selectedGame = null;
-        setCommonAppData(
-            (_prev: CommonAppDataDataType | null): CommonAppDataDataType =>
-                ({ apis, cache, games, selectedGame }) as CommonAppDataDataType
-        );
-        // selectedGame === null && router.push('/settings');
+            // selectedGame = null;
+            setCommonAppData(
+                (_prev: CommonAppDataDataType | null): CommonAppDataDataType =>
+                    ({ apis, cache, games, selectedGame }) as CommonAppDataDataType
+            );
+            // selectedGame === null && router.push('/settings');
 
-        setRequiredModulesLoaded(true);
-    }, [ready]);
+            setRequiredModulesLoaded(true);
+        }, [/* ready, */ router, t]);
 
     // ensures that all required modules are fully loaded
     useEffect((): void => {
@@ -465,7 +493,7 @@ export const CommonAppDataProvider = ({ children }: CommonAppDataProviderProps) 
         const REQUIRED_MODULES = ['uStore', 'palhub', 'nexus', 'logger', 'ipc'];
         if (REQUIRED_MODULES.some((module: string): boolean => !window[module as keyof Window])) return;
         void refreshCommonDataWithRedirect();
-    }, [ready]);
+    }, [ready, refreshCommonDataWithRedirect]);
 
     return (
         <CommonAppDataContext.Provider
@@ -481,6 +509,7 @@ export const CommonAppDataProvider = ({ children }: CommonAppDataProviderProps) 
                 updateSelectedGamePath,
                 forgetGame,
                 refreshCommonDataWithRedirect,
+                handleError,
             }}
         >
             {children}
@@ -489,6 +518,6 @@ export const CommonAppDataProvider = ({ children }: CommonAppDataProviderProps) 
 };
 
 // Export actual hook to useLocalization
-export default function useCommonChecks(): CommonAppDataContextType {
-    return useContext<CommonAppDataContextType>(CommonAppDataContext);
+export default function useCommonChecks(): CommonChecks {
+    return useContext<CommonChecks>(CommonAppDataContext);
 }

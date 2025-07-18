@@ -17,16 +17,19 @@ import type { DekItemProps } from '@components/core/dek-item';
 import type { CommonIcon } from '@config/common-icons';
 import IconDown from '@svgs/fa5/solid/arrow-down.svg';
 import IconList from '@svgs/fa5/solid/list-ul.svg';
-import type { HTMLAttributes, MouseEvent, ReactElement, ReactNode, RefObject } from 'react';
+import type { VoidFunctionWithArgs } from '@typed/common';
+import type { HTMLAttributes, MouseEvent, MouseEventHandler, ReactElement, ReactNode, RefObject } from 'react';
 import React, { Children, Component, createRef, useEffect, useMemo, useState } from 'react';
 
-// import styles from '../styles/dekselect.module.css';
+// import styles from '@styles/dekselect.module.css';
 
 export declare type OnClickOutsideCallback = (event: globalThis.MouseEvent) => void;
 
 function useOnClickOutside(ref: RefObject<HTMLDivElement>, callback: (event: globalThis.MouseEvent) => void): void {
     useEffect((): VoidFunction => {
-        const handleClickOutside = (event: globalThis.MouseEvent): void => {
+        const handleClickOutside: VoidFunctionWithArgs<[event: globalThis.MouseEvent]> = (
+            event: globalThis.MouseEvent
+        ): void => {
             if (ref.current && event.target instanceof Node && !ref.current.contains(event.target)) {
                 // alert("You clicked outside of me!");
                 if (callback) callback(event); // eslint-disable-line unicorn/no-lonely-if
@@ -34,11 +37,11 @@ function useOnClickOutside(ref: RefObject<HTMLDivElement>, callback: (event: glo
         };
         // Bind the event listener
         document.addEventListener('mousedown', handleClickOutside);
-        return () => {
+        return (): void => {
             // Unbind the event listener on clean up
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [ref]);
+    }, [callback, ref]);
 }
 
 export declare type OnChangeCallback = (
@@ -62,20 +65,19 @@ export default function DekSelect({
     uid,
     disableInput = false,
 }: DekSelectProps): ReactElement<DekSelectProps> {
-    const child_array: ReactElement<DekItemProps>[] = Children.toArray(children)
-        .filter((c: Exclude<ReactNode, boolean | null | undefined>): boolean => {
-            void window.logger.info(`type of element in dek-select children is ${c.toString()}`); // eslint-disable-line @typescript-eslint/no-base-to-string
-            // prettier-ignore
-            return c instanceof Component && 'active' in c.props
+    const child_array: ReactElement<DekItemProps>[] = Children.toArray(children).filter<
+        ReturnType<typeof Children.toArray>,
+        ReactElement<DekItemProps>
+    >((c: Exclude<ReactNode, boolean | null | undefined>): boolean => {
+        void window.logger.info(`type of element in dek-select children is ${c.toString()}`); // eslint-disable-line @typescript-eslint/no-base-to-string
+        // prettier-ignore
+        return c instanceof Component && 'active' in c.props
                 && (typeof (c.props as DekItemProps).active === 'boolean' || !(c.props as DekItemProps).active);
-        })
-        .map((c: Exclude<ReactNode, boolean | null | undefined>): ReactElement<DekItemProps> => {
-            return c as unknown as ReactElement<DekItemProps>;
-        });
+    });
     const active: ReactElement<DekItemProps> | undefined = useMemo((): ReactElement<DekItemProps> | undefined => {
         return child_array.find((c: ReactElement<DekItemProps>, index: number): boolean => {
             return c.props.active || active_id === index;
-        }) as unknown as ReactElement<DekItemProps> | undefined;
+        });
     }, [child_array, active_id]);
     // prettier-ignore
     const selected_text: ReactNode = useMemo((): ReactNode =>
@@ -92,20 +94,18 @@ export default function DekSelect({
     useOnClickOutside(ref, (): void => setShowUL(false));
 
     // when main element is clicked
-    const onClickElement = (event: MouseEvent<HTMLDivElement>): void => {
+    const onClickElement: MouseEventHandler<HTMLDivElement> = (event: MouseEvent<HTMLDivElement>): void => {
         event.preventDefault();
         event.stopPropagation();
         if (disableInput) return;
-        setShowUL((old): boolean => !old);
+        setShowUL((old: boolean): boolean => !old);
     };
     // when list item is clicked
-    const onClickItem = (event: MouseEvent<HTMLLIElement>): void => {
+    const onClickItem: MouseEventHandler<HTMLLIElement> = (event: MouseEvent<HTMLLIElement>): void => {
         event.preventDefault();
         event.stopPropagation();
         if (event.target instanceof HTMLLIElement && event.target.parentNode !== null) {
-            const index = Array.prototype.slice
-                .call(event.target.parentNode.children)
-                .indexOf(event.target);
+            const index: number = Array.prototype.slice.call(event.target.parentNode.children).indexOf(event.target);
             // setSelected(event.target.innerText);
             onChange(event, selected_text, event.target.textContent, index);
             setShowUL(false);

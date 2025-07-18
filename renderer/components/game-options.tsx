@@ -2,15 +2,15 @@ import DekDiv from '@components/core/dek-div';
 import { ENVEntry, ENVEntry_Input, ENVEntryLabel } from '@components/modals/common';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { CommonAppDataContextType, GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError } from '@hooks/use-common-checks';
+import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
+import useCommonChecks from '@hooks/use-common-checks';
 import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { UseStatePair, VoidFunctionWithArgs } from '@typed/common';
 import type { OpenDialogReturnValue } from 'electron';
 // import wait from '@utils/wait';
 import type { Dispatch, MouseEvent, ReactElement, SetStateAction } from 'react';
-import React, { useCallback, useState } from 'react';
+import React, { Fragment, useCallback, useState } from 'react';
 
 export declare interface GameConfigurationProps {
     tempGame: GameInformation | null;
@@ -26,7 +26,7 @@ export default function GameConfiguration({
     setShow,
 }: GameConfigurationProps): ReactElement<GameConfigurationProps> | null {
     const applog: AppLogger = useAppLogger('GameConfiguration');
-    const { requiredModulesLoaded, updateSelectedGamePath, forgetGame }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded, updateSelectedGamePath, forgetGame, handleError }: CommonChecks = useCommonChecks();
     const [knownGamePath, setKnownGamePath]: UseStatePair<string | undefined> = useState<string | undefined>(
         tempGame?.path
     );
@@ -40,9 +40,9 @@ export default function GameConfiguration({
                 tempGame,
                 new_value,
                 async (selectedGame: GameInformation): Promise<void> => setTempGame(selectedGame) // eslint-disable-line @typescript-eslint/require-await
-            ).catch((error: unknown) => handleError(error, applog));
+            ).catch((error: unknown): void => handleError(error, applog));
         },
-        [tempGame, setKnownGamePath, setTempGame]
+        [tempGame, updateSelectedGamePath, setTempGame, handleError, applog]
     );
 
     const install_types: string[] = tA(`/settings.choices.install-type`);
@@ -56,36 +56,31 @@ export default function GameConfiguration({
         if (!tempGame) return;
         forgetGame(tempGame).catch((error: unknown) => handleError(error, applog));
         setShow(false);
-    }, [tempGame]);
+    }, [applog, forgetGame, handleError, setShow, tempGame]);
 
     const onClickSelectGamePath: VoidFunction = useCallback((): void => {
-        if (!knownGamePath) return;
-        (async (
-            tempGame: GameInformation | undefined | null,
-            knownGamePath: string | undefined,
-            handleGamePathChange: (name: string, new_value: string) => void
-        ): Promise<void> => {
-            if (!(tempGame?.path ?? knownGamePath)) return;
+        (async (): Promise<void> => {
+            if (!tempGame?.path || !knownGamePath) return;
             // select game path folder:
             const result: OpenDialogReturnValue = await window.ipc.invoke('open-file-dialog', {
                 title: t('modals.game-config.root-game-folder', { game: tempGame ?? { name: '' } }),
                 // buttonLabel: t('/settings.inputs.game-path.select-button', { game: tempGame ?? {name: ''} }),
                 properties: ['openDirectory', 'createDirectory'],
-                defaultPath: tempGame?.path ?? knownGamePath!,
+                defaultPath: tempGame?.path ?? knownGamePath,
             });
             console.log('Selected game path:', result);
             if (result && result.filePaths.length > 0) {
                 handleGamePathChange('path', result.filePaths[0]!);
             }
-        })(tempGame, knownGamePath, handleGamePathChange).catch((error: unknown) => handleError(error, applog));
-    }, [tempGame, knownGamePath, handleGamePathChange]);
+        })().catch((error: unknown): void => handleError(error, applog));
+    }, [knownGamePath, tempGame, handleGamePathChange, t, handleError, applog]);
 
     const can_use_ue4ss: boolean = !!tempGame?.map_data?.platforms?.[tempGame?.launch_type]?.modloader?.ue4ss;
     console.log({ can_use_ue4ss, tempGame });
 
     if (!requiredModulesLoaded || !tempGame) return null;
     return (
-        <React.Fragment>
+        <Fragment>
             {tempGame?.id && (
                 <div className="btn-group dek-choice w-100 mb-3" role="group">
                     <DekDiv className="btn btn-secondary px-3 w-50 disabled" disabled={true}>
@@ -161,7 +156,10 @@ export default function GameConfiguration({
                     )}
                     {tempGame?.has_ue4ss && (
                         <div className="col">
-                            <div className="col btn btn-danger px-3 w-100" onClick={() => runModloaderTask('uninstall')}>
+                            <div
+                                className="col btn btn-danger px-3 w-100"
+                                onClick={(_event: MouseEvent<HTMLDivElement>): void => runModloaderTask('uninstall')}
+                            >
                                 <strong>{t('/settings.buttons.uninstall-ue4ss')}</strong>
                             </div>
                         </div>
@@ -180,7 +178,7 @@ export default function GameConfiguration({
                             )}
                             <button
                                 className="btn btn-warning p-3 w-100 mt-3"
-                                onClick={(_event: MouseEvent<HTMLButtonElement>) => runModloaderTask('install')}
+                                onClick={(_event: MouseEvent<HTMLButtonElement>): void => runModloaderTask('install')}
                             >
                                 <strong>{t('/settings.buttons.download-ue4ss', { game: tempGame })}</strong>
                             </button>
@@ -198,6 +196,6 @@ export default function GameConfiguration({
                     </div>
                 </div>
             )}
-        </React.Fragment>
+        </Fragment>
     );
 }

@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import { env, platform } from 'node:process';
 
-import localization from '@locales/en-dektionary.json';
 import type { Locale, LocaleGameNameKeyPair } from '@locales/*-dektionary.json';
+import localization from '@locales/en-dektionary.json';
 import DEAP from '@main/dek/deap';
 import DiscordRPC from 'discord-rpc';
 import type { ValueOf } from 'type-fest';
@@ -135,9 +135,10 @@ export default {
             gameData ? gameData.split('.')?.[0] || 'unknown' : 'unknown'
         ) as KeyOfLocalizationGames;
         // prettier-ignore
-        type LocalGameName = keyof LocaleGameNameKeyPair | KeyOfLocalizationGames; // eslint-disable-line @typescript-eslint/no-redundant-type-constituents
+        type LocalGameName = keyof LocaleGameNameKeyPair | KeyOfLocalizationGames;
         /** @type {string} */
-        const localGameName: LocalGameName = ((localization as Locale).games?.[gameName]?.name || gameName) as LocalGameName;
+        const localGameName: LocalGameName = ((localization as Locale).games?.[gameName]?.name ||
+            gameName) as LocalGameName;
         /** @type {number} */
         const nameLen: number = localGameName.length;
         /** @type {string} */

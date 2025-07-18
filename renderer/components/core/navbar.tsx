@@ -7,7 +7,7 @@ import AutoUpdater from '@components/core/autoupdater';
 import * as CommonIcons from '@config/common-icons';
 import type { NavbarItem } from '@config/navbar-items';
 import navbar_items from '@config/navbar-items';
-import type { CommonAppDataContextType } from '@hooks/use-common-checks';
+import type { CommonChecks } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
 import useLocalization from '@hooks/use-localization';
 // import useAppLogger from '@hooks/use-app-logger';
@@ -41,7 +41,7 @@ export default function MainNavbar({
         requiredModulesLoaded: _requiredModulesLoaded,
         commonAppData,
         updateSelectedGame: _updateSelectedGame,
-    }: CommonAppDataContextType = useCommonChecks();
+    }: CommonChecks = useCommonChecks();
     const { t } = useLocalization();
     const router: NextRouter = useRouter();
     const active_route: string = router.pathname;

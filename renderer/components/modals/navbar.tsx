@@ -13,7 +13,7 @@ import type { NavbarItem } from '@config/navbar-items';
 import navbar_items from '@config/navbar-items';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { CommonAppDataContextType } from '@hooks/use-common-checks';
+import type { CommonChecks } from '@hooks/use-common-checks';
 import useCommonChecks, { handleError } from '@hooks/use-common-checks';
 import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
@@ -33,7 +33,7 @@ export declare interface NavbarModalProps {
 export default function NavbarModal({ show, setShow }: NavbarModalProps): ReactElement {
     const applog: AppLogger = useAppLogger('NavbarModal');
     const onCancel: VoidFunction = useCallback(() => setShow(false), []);
-    const { commonAppData }: CommonAppDataContextType = useCommonChecks();
+    const { commonAppData }: CommonChecks = useCommonChecks();
 
     const { t }: UseLocalizationReturn = useLocalization();
     const router: NextRouter = useRouter();

@@ -8,7 +8,7 @@ import type { CommonIcon } from '@config/common-icons';
 import * as CommonIcons from '@config/common-icons';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { CommonAppDataContextType } from '@hooks/use-common-checks';
+import type { CommonChecks } from '@hooks/use-common-checks';
 import useCommonChecks, { handleError } from '@hooks/use-common-checks';
 import type { IModInfoWithSavedConfig } from '@main/dek/palhub-types';
 import type { PropsMouseEventHandler } from '@typed/common';
@@ -102,7 +102,7 @@ export default function ModCardComponent({
         [onClick, mod]
     );
 
-    const { requiredModulesLoaded, commonAppData }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
     const game_path: string | undefined = commonAppData?.selectedGame?.path;
     const cache_dir: string | null = commonAppData?.cache;
 

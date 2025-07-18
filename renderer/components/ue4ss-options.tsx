@@ -7,7 +7,7 @@ import DekChoice from '@components/core/dek-choice';
 import { ensureEntryValueType, ENVEntry, ENVEntryLabel } from '@components/modals/common';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { CommonAppDataContextType, GameInformation } from '@hooks/use-common-checks';
+import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
 import useCommonChecks, { handleError } from '@hooks/use-common-checks';
 import type { UseLocalizationReturn } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
@@ -66,7 +66,7 @@ export declare interface Ue4ssConfiguratorProps {
 
 export default function Ue4ssConfigurator({ game }: Ue4ssConfiguratorProps): ReactElement<Ue4ssConfiguratorProps> {
     const applog: AppLogger = useAppLogger('Ue4ssConfigurator');
-    const { requiredModulesLoaded }: CommonAppDataContextType = useCommonChecks();
+    const { requiredModulesLoaded }: CommonChecks = useCommonChecks();
     const [showAdvanced, setShowAdvanced]: UseStatePair<boolean> = useState<boolean>(false);
     const [hasChanges, setHasChanges]: UseStatePair<boolean> = useState<boolean>(false);
     const [settings, setSettings]: UseStatePair<Ue4ssSettings | null> = useState<Ue4ssSettings | null>(null);
