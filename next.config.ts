@@ -5,7 +5,7 @@ import type { NextConfig } from 'next';
 import type { WebpackConfigContext } from 'next/dist/server/config-shared';
 import type { Configuration, RuleSetRule } from 'webpack';
 
-import CompressPublicImages from './scripts/compressPublicImages';
+import CompressPublicImages from './scripts/compress-public-images';
 
 type ConfigurationModuleRules = NonNullable<NonNullable<Configuration['module']>['rules']>;
 type ConfigurationModuleRule = ConfigurationModuleRules[0];
