@@ -4,7 +4,11 @@ import { env } from 'node:process';
 import type { NextConfig } from 'next';
 import type { WebpackConfigContext } from 'next/dist/server/config-shared';
 import type { Configuration, RuleSetRule } from 'webpack';
+
 import CompressPublicImages from './scripts/compressPublicImages';
+
+type ConfigurationModuleRules = NonNullable<NonNullable<Configuration['module']>['rules']>;
+type ConfigurationModuleRule = ConfigurationModuleRules[0];
 
 const nextConfig: NextConfig = {
     output: 'export',
@@ -17,20 +21,41 @@ const nextConfig: NextConfig = {
     productionBrowserSourceMaps: true,
     typescript: {
         ignoreBuildErrors: false,
-        tsconfigPath: path.relative(path.join(__dirname, 'renderer'), path.join(__dirname, 'tsconfig.json'))
+        tsconfigPath: path.relative(path.join(__dirname, 'renderer'), path.join(__dirname, 'tsconfig.json')),
     },
     webpack: (config: Configuration, context: WebpackConfigContext): Configuration => {
         config.devtool = 'source-map'; // Needed for better renderer debugging
         config.module ??= {};
         config.module.rules ??= [];
 
-        const fileLoaderRule: RuleSetRule | undefined = config.module.rules.find((rule: false | "" | 0 | RuleSetRule | "..." | null | undefined): boolean =>
-            !!rule && typeof rule !== 'boolean' && typeof rule !== 'string' && typeof rule !== 'number' && !!rule.test && typeof rule.test !== 'string' && (rule.test instanceof RegExp) && rule.test.test('.svg'),
-        ) as RuleSetRule | undefined;
-        
+        const fileLoaderRule: RuleSetRule | undefined = config.module.rules.find<ConfigurationModuleRule, RuleSetRule>(
+            (rule: ConfigurationModuleRule): boolean =>
+                !!rule &&
+                typeof rule !== 'boolean' &&
+                typeof rule !== 'string' &&
+                typeof rule !== 'number' &&
+                'test' in rule &&
+                !!rule.test &&
+                typeof rule.test !== 'string' &&
+                rule.test instanceof RegExp &&
+                rule.test.test('.svg')
+        );
 
         // Add support for importing SVG files using @svgr/webpack
-        if (fileLoaderRule && fileLoaderRule.issuer && fileLoaderRule.resourceQuery && typeof fileLoaderRule.resourceQuery !== 'string' && !(fileLoaderRule.resourceQuery instanceof RegExp) && typeof fileLoaderRule.resourceQuery !== 'function' && !Array.isArray(fileLoaderRule.resourceQuery) && fileLoaderRule.resourceQuery.not && typeof fileLoaderRule.resourceQuery.not !== 'string' && !(fileLoaderRule.resourceQuery.not instanceof RegExp) && typeof fileLoaderRule.resourceQuery.not !== 'function' && Array.isArray(fileLoaderRule.resourceQuery.not)) {
+        if (
+            fileLoaderRule &&
+            fileLoaderRule.issuer &&
+            fileLoaderRule.resourceQuery &&
+            typeof fileLoaderRule.resourceQuery !== 'string' &&
+            !(fileLoaderRule.resourceQuery instanceof RegExp) &&
+            typeof fileLoaderRule.resourceQuery !== 'function' &&
+            !Array.isArray(fileLoaderRule.resourceQuery) &&
+            fileLoaderRule.resourceQuery.not &&
+            typeof fileLoaderRule.resourceQuery.not !== 'string' &&
+            !(fileLoaderRule.resourceQuery.not instanceof RegExp) &&
+            typeof fileLoaderRule.resourceQuery.not !== 'function' &&
+            Array.isArray(fileLoaderRule.resourceQuery.not)
+        ) {
             config.module.rules.push(
                 // Reapply the existing rule, but only for svg imports ending in ?url
                 {
@@ -44,7 +69,7 @@ const nextConfig: NextConfig = {
                     issuer: fileLoaderRule.issuer,
                     resourceQuery: { not: [...fileLoaderRule.resourceQuery.not, /url/] }, // exclude if *.svg?url
                     use: ['@svgr/webpack'],
-                },
+                }
             );
         } else {
             config.module.rules.push(
@@ -53,7 +78,7 @@ const nextConfig: NextConfig = {
                     test: /\.svg$/i,
                     issuer: /\.[jt]sx?$/,
                     use: ['@svgr/webpack'],
-                },
+                }
             );
         }
 
@@ -72,15 +97,15 @@ const nextConfig: NextConfig = {
                             transpileOnly: true,
                             experimentalWatchApi: true,
                             onlyCompileBundledFiles: true,
-                        }
-                    }
-                ]
+                        },
+                    },
+                ],
             }
         );
-        
+
         config.plugins ??= [];
-        config.plugins.push(new CompressPublicImages({ force: env['NODE_ENV'] !== 'production' }))
-        
+        config.plugins.push(new CompressPublicImages({ force: env['NODE_ENV'] !== 'production' }));
+
         return config;
     },
     // ignore key checks blah blah blah
