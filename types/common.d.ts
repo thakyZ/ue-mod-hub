@@ -1,5 +1,15 @@
 declare module '@typed/common';
-import type { ChangeEvent, Dispatch, EventHandler, MouseEvent, MouseEventHandler, SetStateAction } from 'react';
+/// <reference types="node" />
+
+import type {
+    ChangeEvent,
+    Dispatch,
+    EventHandler,
+    HTMLInputTypeAttribute,
+    MouseEvent,
+    MouseEventHandler,
+    SetStateAction,
+} from 'react';
 
 export declare interface BaseSyntheticEvent<E = object, C = unknown, T = unknown> {
     nativeEvent: E;
@@ -22,7 +32,7 @@ export declare interface BaseSyntheticEvent<E = object, C = unknown, T = unknown
 export declare type SyntheticEvent<T = Element, E = Event> = BaseSyntheticEvent<E, EventTarget & T, EventTarget>;
 
 export declare interface OptionalMouseEventHandler<T = Element> extends MouseEventHandler<T> {
-    (event?: MouseEvent<T>): void
+    (event?: MouseEvent<T>): void;
 }
 
 export declare interface GenericEventWithTarget<T = Element> extends SyntheticEvent<T> {
@@ -227,7 +237,15 @@ export declare type MaybeUnset<T> = Nullable<T> | Undefinable<T>;
 
 export declare type BooleanSet = '0' | '1' | boolean;
 
-export declare type ValueType = HTMLInputTypeAttribute | 'intbool' | 'string' | 'number' | 'bigint' | 'boolean' | 'undefined' | 'null'; // | ((...args: unknown[]) => ReactNode);
+export declare type ValueType =
+    | HTMLInputTypeAttribute
+    | 'intbool'
+    | 'string'
+    | 'number'
+    | 'bigint'
+    | 'boolean'
+    | 'undefined'
+    | 'null'; // | ((...args: unknown[]) => ReactNode);
 
 export declare type BooleanChoose<
     T extends T1 | T2,
