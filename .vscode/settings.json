@@ -1,82 +1,84 @@
 {
-  "cSpell.ignoreRandomStrings": true,
-  "cSpell.ignoreRegExpList": [
-    "GUIU(?=Function)", // Partial name of a class
-    "(?<=key=)\\w+(?=&)"
-  ],
-  "cSpell.ignoreWords": [
-    "opac", // Short for opacity
-    "apik", // Short for API key
-    "UNKO", // Short for unknown
-    "Decreace", // Misspelled version of Decrease from the game Palworld
-    "newbg", // Short for new background
-    "bgopac", // Short for background opacity
-    "perc", // Short for percent
-    "utheme", // Short for Unreal theme
-    "newopac", // Short for new opacity
-    "rungameid", // Parameter for Stream
-    "STEAMGAMEID", // Parameter placeholder
-    "grecord", // Short for global record
-    "gsend", // Short for global send
-    "gcolors", // Short for global colors
-    "gformatter", // Short for global formatter
-    "gfilestream", // Short for global file stream
-    "ghttpstream", // Short for global HTTP stream
-    "xDir", // Conjunction of X direction
-    "yDir", // Conjunction of Y direction
-    "xMove", // Conjunction of Y move
-    "yMove" // Conjunction of Y move
-  ],
-  "cSpell.words": [
-    "Dekita", // Author of the program
-    "bbob", // Package prefix
-    "luxon", // Package name
-    "unrar", // To extract a rar file
-    "SVGs", // Package prefix and plural of SVG
-    "BlackMythWukong", // Name of a game
-    "Wukong", // Sun Wukong, also known as the Monkey King, a central character in the 16th-century Chinese novel Journey to the West
-    "Tekken", // Common game franchise
-    "NSIS", // Installer library
-    "Rebranded", // Past tenths of to rebrand something
-    "customizer", // Name of a program
-    "DekCheck", // Name of a component
-    "DekCheckBox", // Name of a component
-    "DekSelect", // Name of a component
-    "WyTdramBkm", // Username(?)
-    "DéKanto", // Community name
-    "Bkav", // Name of an anti-virus
-    "DEAP", // Name of a class short for Dekita's Electron App Project
-    "MSApplication", // XML Element name
-    "MSTile", // Filename prefix
-    "DekXMOG", // Palworld mod
-    "dektionary", // Custom namespace name
-    "khakii", // Theme name
-    "steg1", // Theme name
-    "CallMeMaybe", // Conjunction
-    "opengl", // Name of a library
-    "Paks", // Plural of shortened form of Pack
-    "Ddarckwolf", // Name of a user
-    "Ddwolf", // Shortened name of Ddarckwolf
-    "inpaint", // Name of a library
-    "dekapp", // Name of the app
-    "egstore", // Name of a file
-    "dwmapi", // Name of a file
-    "uasset", // File extension for Unreal Engine
-    "ucas", // File extension for Unreal Engine
-    "utac", // File extension for Unreal Engine
-    "utoc", // File extension for Unreal Engine
-    "FileOrDir", // Conjunction of file or directory
-    "configurables", // Pluarl for configurable
-    "onceify", // Method name
-    "HKLM", // Short for HKey Local Machine
-    "KustoomLoog", // Silly class name :3c
-    "NoNav", // Conjunction of No Navigation
-    "DekitaRPG" // Name of the creator's website
-  ],
-  "editor.trimAutoWhitespace": false,
-  "files.eol": "\n",
-  "files.trimTrailingWhitespace": false,
-  "javascript.preferences.quoteStyle": "single",
-  // "typescript.tsserver.experimental.enableProjectDiagnostics": false,
-  // "typescript.tsserver.web.projectWideIntellisense.suppressSemanticErrors": false
+    "cSpell.ignoreRandomStrings": true,
+    "editor.insertSpaces": true,
+    "editor.indentSize": 4,
+    "cSpell.ignoreRegExpList": [
+        "GUIU(?=Function)", // Partial name of a class
+        "(?<=key=)\\w+(?=&)"
+    ],
+    "cSpell.ignoreWords": [
+        "opac", // Short for opacity
+        "apik", // Short for API key
+        "UNKO", // Short for unknown
+        "Decreace", // Misspelled version of Decrease from the game Palworld
+        "newbg", // Short for new background
+        "bgopac", // Short for background opacity
+        "perc", // Short for percent
+        "utheme", // Short for Unreal theme
+        "newopac", // Short for new opacity
+        "rungameid", // Parameter for Stream
+        "STEAMGAMEID", // Parameter placeholder
+        "grecord", // Short for global record
+        "gsend", // Short for global send
+        "gcolors", // Short for global colors
+        "gformatter", // Short for global formatter
+        "gfilestream", // Short for global file stream
+        "ghttpstream", // Short for global HTTP stream
+        "xDir", // Conjunction of X direction
+        "yDir", // Conjunction of Y direction
+        "xMove", // Conjunction of Y move
+        "yMove" // Conjunction of Y move
+    ],
+    "cSpell.words": [
+        "Dekita", // Author of the program
+        "bbob", // Package prefix
+        "luxon", // Package name
+        "unrar", // To extract a rar file
+        "SVGs", // Package prefix and plural of SVG
+        "BlackMythWukong", // Name of a game
+        "Wukong", // Sun Wukong, also known as the Monkey King, a central character in the 16th-century Chinese novel Journey to the West
+        "Tekken", // Common game franchise
+        "NSIS", // Installer library
+        "Rebranded", // Past tenths of to rebrand something
+        "customizer", // Name of a program
+        "DekCheck", // Name of a component
+        "DekCheckBox", // Name of a component
+        "DekSelect", // Name of a component
+        "WyTdramBkm", // Username(?)
+        "DéKanto", // Community name
+        "Bkav", // Name of an anti-virus
+        "DEAP", // Name of a class short for Dekita's Electron App Project
+        "MSApplication", // XML Element name
+        "MSTile", // Filename prefix
+        "DekXMOG", // Palworld mod
+        "dektionary", // Custom namespace name
+        "khakii", // Theme name
+        "steg1", // Theme name
+        "CallMeMaybe", // Conjunction
+        "opengl", // Name of a library
+        "Paks", // Plural of shortened form of Pack
+        "Ddarckwolf", // Name of a user
+        "Ddwolf", // Shortened name of Ddarckwolf
+        "inpaint", // Name of a library
+        "dekapp", // Name of the app
+        "egstore", // Name of a file
+        "dwmapi", // Name of a file
+        "uasset", // File extension for Unreal Engine
+        "ucas", // File extension for Unreal Engine
+        "utac", // File extension for Unreal Engine
+        "utoc", // File extension for Unreal Engine
+        "FileOrDir", // Conjunction of file or directory
+        "configurables", // Pluarl for configurable
+        "onceify", // Method name
+        "HKLM", // Short for HKey Local Machine
+        "KustoomLoog", // Silly class name :3c
+        "NoNav", // Conjunction of No Navigation
+        "DekitaRPG" // Name of the creator's website
+    ],
+    "editor.trimAutoWhitespace": false,
+    "files.eol": "\n",
+    "files.trimTrailingWhitespace": false,
+    "javascript.preferences.quoteStyle": "single",
+    // "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+    // "typescript.tsserver.web.projectWideIntellisense.suppressSemanticErrors": false
 }
