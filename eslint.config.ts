@@ -1,80 +1,85 @@
 // @ts-check
 import * as console from 'node:console';
 
-import * as electron from '@electron-toolkit/eslint-config';
-import { fixupConfigRules } from '@eslint/compat';
-import { FlatCompat } from '@eslint/eslintrc';
+import electron from '@electron-toolkit/eslint-config';
+// import { fixupConfigRules } from '@eslint/compat';
 import * as js from '@eslint/js';
-import * as importPlugin from 'eslint-plugin-import';
+import next from '@next/eslint-plugin-next';
+import type { SharedConfig } from '@typescript-eslint/utils/dist/ts-eslint/Config';
+import importPlugin from 'eslint-plugin-import';
 import jsdoc from 'eslint-plugin-jsdoc';
-import * as prettier from 'eslint-plugin-prettier/recommended';
+import prettier from 'eslint-plugin-prettier/recommended';
 import * as reactCompiler from 'eslint-plugin-react-compiler';
-import * as simpleImportSort from 'eslint-plugin-simple-import-sort';
+import reactHooks from 'eslint-plugin-react-hooks';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import unicorn from 'eslint-plugin-unicorn';
-import * as globals from 'globals';
+import globals from 'globals';
+import type { ConfigArray } from 'typescript-eslint';
 import ts from 'typescript-eslint';
 
 /**
  * Helper function to filter globals with whitespace issues
- * @template {{ [name: string]: boolean | 'off' | 'readable' | 'readonly' | 'writable' | 'writeable'; }} T
+ * @template {typeof (import('globals').amd)} T
  * @param {T} globalSet
  * @returns {T}
  */
-function filterGlobals(globalSet) {
-    /** @type {Partial<T>} */
-    const filtered = {};
-    for (const key in globalSet) {
-        if (key.trim() === key) {
+function filterGlobals<T extends typeof globals.amd>(globalSet: T): T {
+    const filtered: T = {} as T;
+    for (const key of Object.keys(globalSet)) {
+        if (key.toString().trim() === key.toString()) {
             filtered[key] = globalSet[key];
         } else {
-            console.warn(`ESLint Config: Filtering out global '${key}' due to leading/trailing whitespace.`);
+            console.warn(`ESLint Config: Filtering out global '${key.toString()}' due to leading/trailing whitespace.`);
         }
     }
-    // @ts-expect-error --- should not be partial at all.
     return filtered;
 }
 
-/** @type {string} */ // @ts-expect-error --- import.meta is safe here.
-const dirname = import.meta.dirname;
+const __dirname: string = import.meta.dirname;
 
 // Create a compatibility layer for traditional config format
-/** @type {FlatCompat} */
-const compat = new FlatCompat({ baseDirectory: dirname });
+// const compat: FlatCompat = new FlatCompat({ baseDirectory: __dirname });
 
-/** @type {import('@typescript-eslint/utils').TSESLint.FlatConfig.ConfigArray} */
-const config = ts.config([
+const config: ConfigArray = ts.config([
+    js.configs.recommended,
+    ts.configs.recommendedTypeChecked,
+    unicorn.configs.recommended,
+    electron,
+    prettier,
+    reactHooks.configs['recommended-latest'],
+    reactCompiler.configs.recommended,
+    jsdoc.configs['flat/stylistic-typescript-flavor'],
+    importPlugin.flatConfigs.react,
+    importPlugin.flatConfigs.typescript,
+    importPlugin.flatConfigs.electron,
+    importPlugin.flatConfigs.errors,
+    // compat.extends('plugin:typescript-paths/recommended'),
     {
         name: 'ignores_and_files',
         ignores: ['**/*.json', 'node_modules', '.next'],
         files: ['**/*.{ts,tsx,mjs,js}'],
     },
-    fixupConfigRules(compat.extends('plugin:@next/next/core-web-vitals')),
-    compat.extends('plugin:typescript-paths/recommended'),
-    compat.config({
-        extends: ['next/typescript'],
+    {
+        name: 'eslint/next',
+        plugins: {
+            '@next/next': next,
+        },
+        rules: {
+            ...(next.configs.recommended.rules as Partial<SharedConfig.RulesRecord>),
+            ...(next.configs['core-web-vitals'].rules as Partial<SharedConfig.RulesRecord>),
+        },
         settings: {
             next: {
                 rootDir: 'renderer',
             },
         },
-    }),
-    importPlugin.flatConfigs.react,
-    importPlugin.flatConfigs.typescript,
-    importPlugin.flatConfigs.electron,
-    importPlugin.flatConfigs.errors,
-    unicorn.configs.recommended,
-    js.configs.recommended,
-    electron,
-    ts.configs.recommendedTypeChecked,
-    prettier,
-    reactCompiler.configs.recommended,
-    jsdoc.configs['flat/stylistic-typescript-flavor'],
+    },
     {
         name: 'typescript_constaints',
         languageOptions: {
             parserOptions: {
                 project: ['tsconfig.json', 'tsconfig.javascript.json'],
-                tsconfigRootDir: dirname,
+                tsconfigRootDir: __dirname,
             },
         },
     },
@@ -89,6 +94,7 @@ const config = ts.config([
             },
             sourceType: 'module',
             globals: {
+                NodeJS: true,
                 ...filterGlobals(globals.browser),
                 ...filterGlobals(globals.node),
                 ...filterGlobals(globals.es2021),
@@ -137,12 +143,22 @@ const config = ts.config([
             'unicorn/consistent-function-scoping': 'off',
             '@typescript-eslint/no-inferrable-types': 'off',
         },
+    },
+    {
+        name: 'react_settings',
         settings: {
             react: {
                 version: 'detect',
             },
+        },
+    },
+    {
+        name: 'import_settings',
+        settings: {
             'import/resolver': {
                 typescript: {
+                    typescript: true, // Enables resolving TypeScript paths
+                    node: true, // Enables resolving Node.js modules
                     alwaysTryTypes: true, // Always try to resolve types under `<root>@types` directory even if it doesn't contain any source code, like `@types/unist`
 
                     bun: true, // Resolve Bun modules (https://github.com/import-js/eslint-import-resolver-typescript#bun)
@@ -150,9 +166,7 @@ const config = ts.config([
                     // Choose from one of the "project" configs below or omit to use <root>/tsconfig.json or <root>/jsconfig.json by default
 
                     // Use <root>/path/to/folder/tsconfig.json or <root>/path/to/folder/jsconfig.json
-                    project: [
-                        'tsconfig.json',
-                    ],
+                    project: ['tsconfig.json'],
                 },
             },
         },
