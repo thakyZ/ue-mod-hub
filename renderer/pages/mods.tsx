@@ -90,7 +90,7 @@ function determineAdvertizedMods(slug: Games): number[] {
         case 'hogwarts-legacy':
             return [1260, 1261, 1275, 1179];
         case 'stellar-blade':
-            return [340, 488, 489, 531, 546, 630];
+            return [1496, 630, 340, 488, 489, 531, 546, 630];
     }
     return [];
 }

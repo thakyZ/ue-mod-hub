@@ -481,6 +481,19 @@ const ORCSMUSTDIEDEATHTRAP: GameMap = {
     },
 } as const;
 
+/** @type {GameMap} */
+const THEKILLINGANTIDOTE: GameMap = {
+    providers: {
+        nexus: 'thekillingantidote',
+    },
+    platforms: {
+        game: {
+            steam: { id: '2254890', root: 'TheKillingAntidote', app: 'TheKillingAntidote' },
+            modloader: { ue4ss: KNOWN_MODLOADERS['optional_ue4ss']! },
+        },
+    },
+};
+
 // /** @type {GameMap} */
 // const SATISFACTORY = {
 //     is_hidden: true,
@@ -509,6 +522,7 @@ const gameMaps: GameMaps = {
     'stellar-blade': STELLARBLADE,
     // "stellar-blade-demo": STELLARBLADEDEMO,
     tekken8: TEKKEN8,
+    'the-killing-antidote': THEKILLINGANTIDOTE,
 } as const;
 
 export default gameMaps;

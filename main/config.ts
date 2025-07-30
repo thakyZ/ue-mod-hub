@@ -32,7 +32,8 @@ export declare type Games =
     | 'satisfactory'
     | 'stellar-blade'
     | 'stellar-blade-demo'
-    | 'tekken8';
+    | 'tekken8'
+    | 'the-killing-antidote';
 
 export declare type ErroredGames = '{UNKNOWN}' | 'undefined';
 
