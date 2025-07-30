@@ -55,9 +55,8 @@ const config: ConfigArray = ts.config([
     importPlugin.flatConfigs.errors,
     // compat.extends('plugin:typescript-paths/recommended'),
     {
-        name: 'ignores_and_files',
-        ignores: ['**/*.json', 'node_modules', '**/.next'],
-        files: ['**/*.{ts,tsx,mjs,js}'],
+        name: 'files_scope',
+        files: ['**/*.{ts,tsx,js,mjs,jsx}'],
     },
     {
         name: 'eslint/next',
@@ -78,7 +77,7 @@ const config: ConfigArray = ts.config([
         name: 'typescript_constaints',
         languageOptions: {
             parserOptions: {
-                project: ['tsconfig.json', 'tsconfig.javascript.json'],
+                project: ['tsconfig.json' /* , 'tsconfig.javascript.json' */],
                 tsconfigRootDir: __dirname,
             },
         },
@@ -200,6 +199,10 @@ const config: ConfigArray = ts.config([
                 },
             ],
         },
+    },
+    {
+        name: 'ignores',
+        ignores: ['**/*.json', 'node_modules', '**/.next/**/*.{ts,tsx,mjs,js}'],
     },
 ]);
 

@@ -35,6 +35,7 @@ export default function MainAppWrapper({ Component, pageProps }: AppProps): Reac
             const originalCause = error.cause;
             error.cause = { info, cause: originalCause };
         }
+
         handleError(error, applog);
         // let _error: unknown = error;
         // if (!_error || _error === null) _error = 'Unknown Error';
