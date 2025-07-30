@@ -3,10 +3,12 @@
 # PalHUB::Client by dekitarpg@gmail.com
 ########################################
 */
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
-import useMediaQuery from '@hooks/use-media-query';
+import UseMediaQuery from '@hooks/use-media-query';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import type { ReactElement } from 'react';
 import { useTypewriter } from 'react-simple-typewriter';
 
 export declare interface BrandHeaderProps {
@@ -16,17 +18,22 @@ export declare interface BrandHeaderProps {
     showImage?: boolean;
 }
 
-export default function BrandHeader({ words, tagline, type, showImage = true }: BrandHeaderProps) {
-    const isDesktop = useMediaQuery('(min-width: 960px)');
-    const { t, tA } = useLocalization();
+export default function BrandHeader({
+    words,
+    tagline,
+    type,
+    showImage = true,
+}: BrandHeaderProps): ReactElement<BrandHeaderProps> {
+    const isDesktop: boolean = UseMediaQuery('(min-width: 960px)');
+    const { t, tA }: Localization = useLocalization();
 
     const [text] = useTypewriter({
         words: words || tA('/privacy.tldr'),
         loop: 0, // Infinit
     });
 
-    const height = showImage ? (isDesktop ? 420 : 280) : 128;
-    const image_size = isDesktop ? 256 : 192;
+    const height: number = showImage ? (isDesktop ? 420 : 280) : 128;
+    const image_size: number = isDesktop ? 256 : 192;
 
     return (
         <motion.div

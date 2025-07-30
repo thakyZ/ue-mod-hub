@@ -5,7 +5,8 @@
 */
 import type { CommonIcon } from '@config/common-icons';
 import * as CommonIcons from '@config/common-icons';
-import type { HTMLAttributes } from 'react';
+import type { TypeFunction, UseStatePair } from '@typed/common';
+import type { HTMLAttributes, ReactElement } from 'react';
 import { useCallback, /* useMemo, */ useState } from 'react';
 import type { ButtonVariant } from 'react-bootstrap/esm/types';
 
@@ -33,7 +34,7 @@ const DEFAULT_ICONS: IconsMap = {
 export default function DekCheckbox({
     text = 'option-text',
     checked = false,
-    onClick = () => {},
+    onClick = (): void => {},
     icons = DEFAULT_ICONS,
     inline = false,
     iconPos = 'right',
@@ -41,10 +42,10 @@ export default function DekCheckbox({
     className = '',
     color = 'secondary',
     labels = [null, null],
-}: DekCheckboxProps) {
-    const [active, _setActive] = useState<boolean>(checked);
-    const Icon = checked ? icons.enabled : icons.disabled;
-    const onClickedBox = useCallback((): boolean => {
+}: DekCheckboxProps): ReactElement<DekCheckboxProps> {
+    const [active, _setActive]: UseStatePair<boolean> = useState<boolean>(checked);
+    const Icon: CommonIcon = checked ? icons.enabled : icons.disabled;
+    const onClickedBox: TypeFunction<boolean> = useCallback((): boolean => {
         const newval: boolean = !checked;
         onClick(newval);
         return newval;
@@ -54,7 +55,7 @@ export default function DekCheckbox({
         //     onClick(newval);
         //     return newval;
         // });
-    }, [checked]);
+    }, [checked, onClick]);
 
     // overwrite text if labels exist:
     text = labels[active ? 0 : 1] ?? text;

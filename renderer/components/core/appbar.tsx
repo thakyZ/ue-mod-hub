@@ -4,7 +4,9 @@
 ########################################
 */
 import * as CommonIcons from '@config/common-icons';
+import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import useWindowNameFromDEAP from '@hooks/use-window-name-from-deap';
 import { ReactElement, useCallback, useEffect, useState } from 'react';
@@ -12,23 +14,23 @@ import type { ContainerProps } from 'react-bootstrap/Container';
 import Container from 'react-bootstrap/Container';
 
 export default function MainAppbar(): ReactElement<ContainerProps> {
-    const { t, ready: _ready } = useLocalization();
+    const { t /* , ready */ }: Localization = useLocalization();
     const windowName: string = useWindowNameFromDEAP();
     const [appVersion, setAppVersion] = useState<string>('0.0.0');
-    const logger = useAppLogger('components/core/appbar');
+    const logger: AppLogger = useAppLogger('components/core/appbar');
 
-    const onClickMinimizeApp = useCallback((): void => {
+    const onClickMinimizeApp: VoidFunction = useCallback((): void => {
         void window?.ipc?.invoke('app-action', windowName, 'minimize');
         void logger('info', 'onClickMinimizeApp');
-    }, [windowName]);
-    const onClickMaximizeApp = useCallback((): void => {
+    }, [logger, windowName]);
+    const onClickMaximizeApp: VoidFunction = useCallback((): void => {
         void window?.ipc?.invoke('app-action', windowName, 'maximize');
         void logger('info', 'onClickMaximizeApp');
-    }, [windowName]);
-    const onClickCloseApp = useCallback((): void => {
+    }, [logger, windowName]);
+    const onClickCloseApp: VoidFunction = useCallback((): void => {
         void window?.ipc?.invoke('app-action', windowName, 'exit');
         void logger('info', 'onClickCloseApp');
-    }, [windowName]);
+    }, [logger, windowName]);
 
     useEffect((): void => {
         void window?.ipc?.invoke('get-version').then(setAppVersion);

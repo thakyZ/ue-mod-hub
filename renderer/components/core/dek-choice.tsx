@@ -22,7 +22,7 @@ export declare interface DekChoiceProps extends Pick<HTMLAttributes<HTMLDivEleme
 export default function DekChoice({
     active = 0,
     choices = [1, 4, 9],
-    onClick = () => {},
+    onClick = (): void => {},
     labels = choices.map(String),
     icons = [null, null],
     color = 'secondary',
@@ -43,7 +43,7 @@ export default function DekChoice({
                         'w-100 btn ' +
                         (isActive ? `btn-${color}` : `btn-dark hover-${color}`) +
                         (disabled ? ' disabled' : '');
-                    const deClick = (): void => {
+                    const deClick: VoidFunction = (): void => {
                         if (disabled) return;
                         // setActiveID(i);
                         onClick(i, choice);

@@ -14,12 +14,13 @@ import useLocalization from '@hooks/use-localization';
 import type { Ue4ssSettings } from '@main/dek/game-map';
 import type {
     GenericEventWithTarget,
+    GenericEventWithTargetHandler,
     PropsChangeEvent,
     PropsMouseEvent,
     PropsMouseEventHandler,
     ValueType,
 } from '@typed/common';
-import type { CSSProperties, HTMLInputTypeAttribute, KeyboardEvent, ReactElement } from 'react';
+import type { CSSProperties, HTMLInputTypeAttribute, KeyboardEvent, KeyboardEventHandler, ReactElement } from 'react';
 // import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 // import Popover from 'react-bootstrap/Popover';
@@ -65,16 +66,16 @@ export function ensureEntryValueType(value: unknown, _num_type: 'int' | 'float' 
             return typeof value;
     }
 
-    if (typeof value !== 'string') return value as ValueType;
+    // if (typeof value !== 'string') return value as ValueType;
 
-    // const numval = num_type === 'int' ? Number.parseInt(value) : parseFloat(value);
-    // if (num_type && !isNaN(numval)) return numval;
+    // // const numval = num_type === 'int' ? Number.parseInt(value) : parseFloat(value);
+    // // if (num_type && !isNaN(numval)) return numval;
 
-    const lowerval: string = (value?.toString() ?? '').toLowerCase();
-    const isboolval = ['true', 'false'].includes(lowerval);
-    if (isboolval) return typeof (lowerval === 'true');
+    // const lowerval: string = (value?.toString() ?? '').toLowerCase();
+    // const isboolval = ['true', 'false'].includes(lowerval);
+    // if (isboolval) return typeof (lowerval === 'true');
 
-    return value as ValueType;
+    // return value as ValueType;
 }
 
 export function prepareDescription(desc: unknown, scanning_env?: unknown): string {
@@ -160,13 +161,15 @@ export function ENVEntry_Input({
 }: ENVEntry_InputProps): ReactElement<ENVEntry_InputProps> {
     // const [knownValue, setKnownValue] = useState(value);
 
-    const onKeyUp = (e: KeyboardEvent<HTMLInputElement>): void => {
+    const onKeyUp: KeyboardEventHandler<HTMLInputElement> = (e: KeyboardEvent<HTMLInputElement>): void => {
         // Check if the key pressed is 'Enter' (key code 13)
         if (e.key !== 'Enter') return;
         onChanged(e);
     };
 
-    const onChanged = (e: GenericEventWithTarget<HTMLInputElement>): void => {
+    const onChanged: GenericEventWithTargetHandler<HTMLInputElement> = (
+        e: GenericEventWithTarget<HTMLInputElement>
+    ): void => {
         // setKnownValue(e.target.value);
         updateSetting?.(name, (e.target as HTMLInputElement).value);
     };
@@ -300,8 +303,8 @@ export function ENVEntry<
 >({
     name = null,
     value = null,
-    onClick = () => {},
-    updateSetting = () => {},
+    onClick = (): void => {},
+    updateSetting = (): void => {},
     defaults = {} as Ue4ssSettings,
     envdatas = {},
     tooltip = '',
@@ -342,11 +345,11 @@ export function ENVEntry<
         return (
             <ENVEntry_Bool
                 {...passthrough}
-                onClick={(event: PropsMouseEvent<ENVEntry_BoolProps, HTMLDivElement>) =>
+                onClick={(event: PropsMouseEvent<ENVEntry_BoolProps, HTMLDivElement>): void =>
                     onClick(event as unknown as PropsMouseEvent<ENVEntryProps<T, TType, TElement>, TElement>)
                 }
                 value={value as boolean}
-                updateSetting={(name: string, value: boolean) => updateSetting(name, value as T)}
+                updateSetting={(name: string, value: boolean): void => updateSetting(name, value as T)}
                 defaults={defaults}
             />
         );
@@ -356,12 +359,12 @@ export function ENVEntry<
             return (
                 <ENVEntry_Input
                     {...passthrough}
-                    onClick={(event: PropsMouseEvent<ENVEntry_InputProps, HTMLInputElement>) =>
+                    onClick={(event: PropsMouseEvent<ENVEntry_InputProps, HTMLInputElement>): void =>
                         onClick(event as unknown as PropsMouseEvent<ENVEntryProps<T, TType, TElement>, TElement>)
                     }
                     noLabel={noLabel ?? false}
                     value={value as string | readonly string[] | number | undefined}
-                    updateSetting={(name: string, value: string | readonly string[] | number | undefined) =>
+                    updateSetting={(name: string, value: string | readonly string[] | number | undefined): void =>
                         updateSetting(name, value as T)
                     }
                     defaults={defaults}
@@ -371,12 +374,12 @@ export function ENVEntry<
             return (
                 <ENVEntry_Bool
                     {...passthrough}
-                    onClick={(event: PropsMouseEvent<ENVEntry_BoolProps, HTMLDivElement>) =>
+                    onClick={(event: PropsMouseEvent<ENVEntry_BoolProps, HTMLDivElement>): void =>
                         onClick(event as unknown as PropsMouseEvent<ENVEntryProps<T, TType, TElement>, TElement>)
                     }
                     noLabel={noLabel ?? false}
                     value={value as boolean}
-                    updateSetting={(name: string, value: boolean) => updateSetting(name, value as T)}
+                    updateSetting={(name: string, value: boolean): void => updateSetting(name, value as T)}
                     defaults={defaults}
                 />
             );
@@ -384,12 +387,12 @@ export function ENVEntry<
             return limits ? (
                 <ENVEntry_Range
                     {...passthrough}
-                    onClick={(event: PropsMouseEvent<ENVEntry_RangeProps, HTMLInputElement>) =>
+                    onClick={(event: PropsMouseEvent<ENVEntry_RangeProps, HTMLInputElement>): void =>
                         onClick(event as unknown as PropsMouseEvent<ENVEntryProps<T, TType, TElement>, TElement>)
                     }
                     noLabel={noLabel ?? false}
                     value={value as number}
-                    updateSetting={(name: string, value: number) => updateSetting(name, value as T)}
+                    updateSetting={(name: string, value: number): void => updateSetting(name, value as T)}
                     defaults={defaults}
                     limits={limits}
                 />
@@ -397,12 +400,12 @@ export function ENVEntry<
                 <ENVEntry_Input
                     {...passthrough}
                     type="number"
-                    onClick={(event: PropsMouseEvent<ENVEntry_InputProps, HTMLInputElement>) =>
+                    onClick={(event: PropsMouseEvent<ENVEntry_InputProps, HTMLInputElement>): void =>
                         onClick(event as unknown as PropsMouseEvent<ENVEntryProps<T, TType, TElement>, TElement>)
                     }
                     noLabel={noLabel ?? false}
                     value={value as number}
-                    updateSetting={(name: string, value: string | readonly string[] | number | undefined) =>
+                    updateSetting={(name: string, value: string | readonly string[] | number | undefined): void =>
                         updateSetting(name, value as T)
                     }
                     defaults={defaults}
@@ -412,12 +415,12 @@ export function ENVEntry<
             return (
                 <ENVEntry_Input
                     {...passthrough}
-                    onClick={(event: PropsMouseEvent<ENVEntry_InputProps, HTMLInputElement>) =>
+                    onClick={(event: PropsMouseEvent<ENVEntry_InputProps, HTMLInputElement>): void =>
                         onClick(event as unknown as PropsMouseEvent<ENVEntryProps<T, TType, TElement>, TElement>)
                     }
                     noLabel={noLabel ?? false}
                     value={value as string | readonly string[] | number | undefined}
-                    updateSetting={(name: string, value: string | readonly string[] | number | undefined) =>
+                    updateSetting={(name: string, value: string | readonly string[] | number | undefined): void =>
                         updateSetting(name, value as T)
                     }
                     defaults={defaults}

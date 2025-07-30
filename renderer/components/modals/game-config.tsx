@@ -10,14 +10,19 @@ import DekCommonAppModal from '@components/core/modal';
 import GameConfiguration from '@components/game-options';
 import UE4SSInstallProgress from '@components/ue4ss-install';
 import Ue4ssConfigurator from '@components/ue4ss-options';
+import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError } from '@hooks/use-common-checks';
+import type { CommonChecks } from '@hooks/use-common-checks';
+import useCommonChecks from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
-import useScreenSize from '@hooks/use-screen-size';
+import useScreenSize, { type ScreenSize } from '@hooks/use-screen-size';
+import type { UseStatePair, VoidFunctionWithArgs } from '@typed/common';
 import wait from '@utils/wait';
 import type { Dispatch, ReactElement, SetStateAction } from 'react';
 import { useCallback, useMemo, useState } from 'react';
+import type { CarouselProps } from 'react-bootstrap/Carousel';
 import Carousel from 'react-bootstrap/Carousel';
 
 export declare interface GameConfigurationModalProps {
@@ -33,34 +38,34 @@ export default function GameConfigurationModal({
     tempGame,
     setTempGame,
 }: GameConfigurationModalProps): ReactElement<GameConfigurationModalProps> {
-    const applog = useAppLogger('GameConfigurationModal');
-    const { requiredModulesLoaded, commonAppData, updateSelectedGame } = useCommonChecks();
-    const [settingsPageID, setSettingsPageID] = useState<number>(0);
-    const { t, tA } = useLocalization(); //'ue4ss');
-    const { isDesktop } = useScreenSize();
-    const fullscreen = !isDesktop;
+    const applog: AppLogger = useAppLogger('GameConfigurationModal');
+    const { commonAppData, handleError, requiredModulesLoaded, updateSelectedGame }: CommonChecks = useCommonChecks();
+    const [settingsPageID, setSettingsPageID]: UseStatePair<number> = useState<number>(0);
+    const { t, tA }: Localization = useLocalization(); //'ue4ss');
+    const { isDesktop }: ScreenSize = useScreenSize();
+    const fullscreen: boolean = !isDesktop;
 
-    const cache_dir = commonAppData?.cache;
+    const cache_dir: string | null = commonAppData?.cache;
     // const api_key = commonAppData?.apis?.nexus;
 
     // const height = fullscreen ? 'calc(100vh - 182px)' : 'calc(100vh / 4 * 2 + 26px)';
-    const height = fullscreen ? 'calc(100vh - 96px)' : 'calc(100vh / 4 * 2 + 26px)';
+    const height: string = fullscreen ? 'calc(100vh - 96px)' : 'calc(100vh / 4 * 2 + 26px)';
 
     const onCancel: VoidFunction = useCallback((): void => {
         setShow(false);
         setTimeout((): void => {
             setSettingsPageID(0);
         }, 250);
-    }, [setShow]);
+    }, [setSettingsPageID, setShow]);
 
     // const onResetData: VoidFunction = useCallback((): void => {
     //     setHasChanges(false);
     //     setShowAdvanced(false);
     // }, []);
 
-    const runModloaderTask = useCallback(
+    const runModloaderTask: VoidFunctionWithArgs<[task: 'install' | 'uninstall' | 'update']> = useCallback(
         (task: 'install' | 'uninstall' | 'update'): void => {
-            (async () => {
+            (async (): Promise<void> => {
                 if (!requiredModulesLoaded || !tempGame || !cache_dir) return;
                 console.log('runModloaderTask:', task, tempGame);
                 switch (task) {
@@ -85,7 +90,7 @@ export default function GameConfigurationModal({
                         const { modloader } = tempGame.map_data.platforms[tempGame.launch_type]!;
                         if (modloader?.ue4ss) {
                             await wait(1000);
-                            await window.palhub('uninstallUE4SS', cache_dir, tempGame.path, modloader.ue4ss);
+                            await window.palhub('uninstallUE4SS', cache_dir, tempGame?.path, modloader.ue4ss);
                             await updateSelectedGame(
                                 tempGame,
                                 // eslint-disable-next-line @typescript-eslint/require-await
@@ -101,13 +106,13 @@ export default function GameConfigurationModal({
                         break;
                     }
                 }
-            })().catch((error: unknown) => handleError((error, applog)));
+            })().catch((error: unknown): void => handleError(error, applog));
         },
-        [requiredModulesLoaded, cache_dir, tempGame?.path]
+        [applog, cache_dir, handleError, requiredModulesLoaded, setTempGame, tempGame, updateSelectedGame]
     );
 
-    const carouselOptions = useMemo(
-        () => ({
+    const carouselOptions: CarouselProps = useMemo(
+        (): CarouselProps => ({
             interval: null,
             controls: false,
             indicators: false,
@@ -119,8 +124,10 @@ export default function GameConfigurationModal({
 
     // if (settings) console.log(settings);
 
-    const isInstallingModloader = settingsPageID === 2;
-    const headerText = isInstallingModloader ? t('modals.modloader.installing-ue4ss') : t('modals.game-config.head');
+    const isInstallingModloader: boolean = settingsPageID === 2;
+    const headerText: string = isInstallingModloader
+        ? t('modals.modloader.installing-ue4ss')
+        : t('modals.game-config.head');
     const modalOptions: DekCommonAppModalProps = {
         show,
         setShow,

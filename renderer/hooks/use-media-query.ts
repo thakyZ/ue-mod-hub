@@ -4,20 +4,19 @@
 ########################################
 */
 
+import type { UseStatePair } from '@typed/common';
 import { useEffect, useState } from 'react';
 
-const useMediaQuery = (query: string): boolean => {
-    const [matches, setMatches] = useState<boolean>(false);
+export default function UseMediaQuery(query: string): boolean {
+    const [matches, setMatches]: UseStatePair<boolean> = useState<boolean>(false);
 
     useEffect((): VoidFunction => {
         const media: MediaQueryList = window.matchMedia(query);
         if (media.matches !== matches) setMatches(media.matches);
-        const listener = (): void => setMatches(media.matches);
+        const listener: VoidFunction = (): void => setMatches(media.matches);
         window.addEventListener('resize', listener);
         return (): void => window.removeEventListener('resize', listener);
     }, [matches, query]);
 
     return matches;
-};
-
-export default useMediaQuery;
+}

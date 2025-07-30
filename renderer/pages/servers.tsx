@@ -15,15 +15,15 @@ import BBCodeRenderer from '@components/core/bbcode';
 // import { ENVEntry, ENVEntryLabel } from '@components/modals/common';
 import ServerDetailsModal from '@components/modals/server-details';
 // import Navbar from '@components/navbar';
-import ServerCardComponent, { type ServerCardComponentProps, type ServerListing } from '@components/server-card';
+import type { ServerCardComponentProps, ServerListing } from '@components/server-card';
+import ServerCardComponent from '@components/server-card';
 import * as CommonIcons from '@config/common-icons';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-// import type { GameInformation } from '@hooks/use-common-checks';
-// import useCommonChecks from '@hooks/use-common-checks';
-import { handleError } from '@hooks/use-common-checks';
+import type { CommonChecks } from '@hooks/use-common-checks';
+import useCommonChecks from '@hooks/use-common-checks';
 import useLocalization from '@hooks/use-localization';
-import useSwrJSON from '@hooks/use-swr-json';
+import UseSwrJSON from '@hooks/use-swr-json';
 import type { UseStatePair } from '@typed/common';
 // import Head from 'next/head';
 // import Image from 'next/image';
@@ -124,13 +124,18 @@ export declare interface ServerPingType {
  * }
  */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const BANNED_MODS: number[] = [];
 
 export default function ServersPage(): ReactElement {
     const applog: AppLogger = useAppLogger('ServersPage');
     const router: NextRouter = useRouter();
     const { t /* , tA */ } = useLocalization();
-    // const { requiredModulesLoaded, commonAppData } = useCommonChecks();
+    const {
+        handleError,
+        // requiredModulesLoaded,
+        // commonAppData,
+    }: CommonChecks = useCommonChecks();
     // const cache_dir: string | null = commonAppData?.cache;
     // const game_path: string | undefined = commonAppData?.selectedGame?.path;
     // const game_data: GameInformation | undefined = commonAppData?.selectedGame;
@@ -139,7 +144,7 @@ export default function ServersPage(): ReactElement {
     const [showServerDetails, setShowServerDetails]: UseStatePair<boolean> = useState<boolean>(false);
     const [activeServer, setActiveServer]: UseStatePair<ServerListing | null> = useState<ServerListing | null>(null);
 
-    const { data, error, loading } = useSwrJSON<ServerPingType, ReactNode>(`https://palhub.dekitarpg.com/api/server-ping`);
+    const { data, error, loading } = UseSwrJSON<ServerPingType, ReactNode>(`https://palhub.dekitarpg.com/api/server-ping`);
     if (loading) return <h1>Loading...</h1>;
     if (error) return <h1>{error}</h1>;
     // return (<pre>{data}</pre>);

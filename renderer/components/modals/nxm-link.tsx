@@ -14,7 +14,7 @@ import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
 import useCommonChecks, { isNXMDeepLink } from '@hooks/use-common-checks';
 import type { DeepLinkNXMType, DeepLinkType } from '@hooks/use-deep-link-listener';
-import useLocalization, { type UseLocalizationReturn } from '@hooks/use-localization';
+import useLocalization, { type Localization } from '@hooks/use-localization';
 import type { IFileInfo } from '@nexusmods/nexus-api';
 import type { UseStatePair } from '@typed/common';
 import type { Dispatch, ReactElement, SetStateAction } from 'react';
@@ -47,7 +47,7 @@ export default function NxmLinkModal({
 
     const onCancel: VoidFunction = useCallback((): void => setShow(false), [setShow]);
     const { activeGame }: ActiveGame = useActiveGame();
-    const { t }: UseLocalizationReturn = useLocalization();
+    const { t }: Localization = useLocalization();
     const game: GameInformation | undefined = activeGame;
 
     const [triggers, setTriggers]: UseStatePair<Triggers | null> = useState<Triggers | null>(null);
@@ -80,12 +80,12 @@ export default function NxmLinkModal({
                 key: deepLinkData.key,
                 expires: deepLinkData.expires,
             });
-        })().catch((error: unknown) => handleError(error, applog));
+        })().catch((error: unknown): void => handleError(error, applog));
     }, [show, deepLinkData, onCancel, handleError, applog]);
 
     console.log('d', deepLinkData);
 
-    const headerText = t('modals.nxm-link.head', { game, mod: deepLinkData });
+    const headerText: string = t('modals.nxm-link.head', { game, mod: deepLinkData });
     const modalOptions = { show, setShow, onCancel, headerText, showX: true };
     return (
         <DekCommonAppModal {...modalOptions}>

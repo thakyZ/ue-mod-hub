@@ -10,10 +10,10 @@ import DekCommonAppModal from '@components/core/modal';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError, parseIntSafe } from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import useCommonChecks, { parseIntSafe } from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
-import type { UseScreenSizeReturn } from '@hooks/use-screen-size';
+import type { ScreenSize } from '@hooks/use-screen-size';
 import useScreenSize from '@hooks/use-screen-size';
 import type { IDownloadURL, IFileInfo as NexusIFileInfo, IModInfo as NexusIModInfo } from '@nexusmods/nexus-api';
 // import IconX from '@svgs/fa5/regular/window-close.svg';
@@ -33,15 +33,15 @@ export declare interface CheckModsModalProps {
 
 export default function CheckModsModal({ show, setShow }: CheckModsModalProps): ReactElement<CheckModsModalProps> {
     const applog: AppLogger = useAppLogger('CheckModsModal');
-    const { t }: UseLocalizationReturn = useLocalization();
-    const { requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
+    const { t }: Localization = useLocalization();
+    const { handleError, requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
     const cache_dir: string | null = commonAppData?.cache;
     const game_path: string | undefined = commonAppData?.selectedGame?.path;
     const game_data: GameInformation | undefined = commonAppData?.selectedGame;
     const api_key: string | null = commonAppData?.apis?.nexus;
 
-    const onCancel: VoidFunction = useCallback((): void => setShow(false), []);
-    const { isDesktop }: UseScreenSizeReturn = useScreenSize();
+    const onCancel: VoidFunction = useCallback((): void => setShow(false), [setShow]);
+    const { isDesktop }: ScreenSize = useScreenSize();
     const fullscreen: boolean = !isDesktop;
     const [modConfig, setModConfig]: UseStatePair<PalHubConfig | null> = useState<PalHubConfig | null>(null);
     type ModsTypePair = NexusIModInfo & IModInfoWithSavedConfig;
@@ -84,7 +84,7 @@ export default function CheckModsModal({ show, setShow }: CheckModsModalProps): 
         if (!modConfig) return;
         const json: string = prepareModList(mods, modConfig);
         navigator.clipboard.writeText(json).catch((error: unknown) => handleError(error, applog));
-    }, [mods, modConfig]);
+    }, [mods, modConfig, handleError, applog]);
 
     const onSaveModList: VoidFunction = useCallback((): void => {
         if (!modConfig) return;
@@ -200,7 +200,7 @@ export default function CheckModsModal({ show, setShow }: CheckModsModalProps): 
             addLogMessage(error?.toString() ?? 'Unknown Error');
             handleError(error, applog);
         });
-    }, [mods, modConfig, game_path]);
+    }, [api_key, cache_dir, mods, modConfig, game_path, handleError, applog]);
 
     const onValidateFiles = useCallback((): void => {
         (async (mods: ModsTypePair[], modConfig: PalHubConfig | null, game_path: string | undefined): Promise<void> => {
@@ -240,7 +240,7 @@ export default function CheckModsModal({ show, setShow }: CheckModsModalProps): 
             await wait(wait_between);
             setShouldShowLogs(false);
         })(mods, modConfig, game_path).catch((error: unknown) => handleError(error, applog));
-    }, [mods, modConfig, game_path]);
+    }, [mods, modConfig, game_path, handleError, applog]);
 
     const updateButtonEnabled: boolean = useMemo((): boolean => {
         if (!mods || !modConfig) return false;
@@ -282,9 +282,9 @@ export default function CheckModsModal({ show, setShow }: CheckModsModalProps): 
             remove_in_handler();
             remove_ex_handler();
         };
-    }, []);
+    }, [requiredModulesLoaded]);
 
-    useEffect(() => {
+    useEffect((): void => {
         if (!requiredModulesLoaded) return;
         (async (
             game_path: string | undefined,
@@ -306,8 +306,8 @@ export default function CheckModsModal({ show, setShow }: CheckModsModalProps): 
             // console.log({ newMods });
             setMods(newMods);
             setModConfig(config);
-        })(game_path, game_data, api_key).catch((error: unknown) => handleError(error, applog));
-    }, [shouldShowLogs, requiredModulesLoaded, game_path, game_data, api_key]);
+        })(game_path, game_data, api_key).catch((error: unknown): void => handleError(error, applog));
+    }, [mods, shouldShowLogs, requiredModulesLoaded, game_path, game_data, api_key, handleError, applog]);
 
     // console.log({ mods, modConfig });
 

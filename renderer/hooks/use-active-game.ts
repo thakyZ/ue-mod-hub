@@ -1,6 +1,6 @@
 import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { ConfigDataStoreGamesRecordLaunchTypes, Games } from '@main/config';
 import type { GamePlatforms, LaunchTypes } from '@main/dek/game-map';
@@ -16,7 +16,7 @@ export declare interface ActiveGame {
 
 export default function useActiveGame(): ActiveGame {
     const { commonAppData }: CommonChecks = useCommonChecks();
-    const { t }: UseLocalizationReturn = useLocalization();
+    const { t }: Localization = useLocalization();
 
     const gamesArray: GamesAarray = useMemo((): GamesAarray => {
         const gamesArray: GamesAarray = [];
@@ -44,7 +44,7 @@ export default function useActiveGame(): ActiveGame {
         }
         // console.log('refreshing memoized datas', gamesArray);
         return gamesArray;
-    }, [commonAppData]);
+    }, [commonAppData, t]);
 
     const activeGame: GameInformation | undefined = gamesArray.find((g: GameInformation): boolean => g.active);
     const selectedGameID: number | undefined = activeGame ? gamesArray.indexOf(activeGame) : undefined;

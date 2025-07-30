@@ -8,7 +8,7 @@ import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { IValidateKeyResponse } from '@nexusmods/nexus-api';
 import type { UseStatePair } from '@typed/common';
@@ -16,20 +16,21 @@ import Link from 'next/link';
 import type { ReactElement } from 'react';
 import React, { useEffect, useState } from 'react';
 import Image from 'react-bootstrap/Image';
+import type { OverlayDelay } from 'react-bootstrap/OverlayTrigger';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Tooltip from 'react-bootstrap/Tooltip';
 import { SwapSpinner } from 'react-spinners-kit';
 
 export default function Footer(): ReactElement {
     const applog: AppLogger = useAppLogger('Footer');
-    const { t /* , ready */ }: UseLocalizationReturn = useLocalization();
+    const { t /* , ready */ }: Localization = useLocalization();
     const [userCount, setUserCount]: UseStatePair<string> = useState<string>('??');
     const [rateLimits, setRateLimits]: UseStatePair<string> = useState<string>('??');
     const [validation, setValidation]: UseStatePair<IValidateKeyResponse | null> = useState<IValidateKeyResponse | null>(
         null
     );
     const { commonAppData, handleError }: CommonChecks = useCommonChecks();
-    const delay = { show: 100, hide: 250 };
+    const delay: OverlayDelay = { show: 100, hide: 250 };
 
     useEffect((): void | VoidFunction => {
         if (!window.ipc) return console.error('ipc not loaded');

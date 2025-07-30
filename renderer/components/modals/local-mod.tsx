@@ -11,15 +11,19 @@ import type { FileTreeEntry } from '@components/core/dek-filetree';
 import DekFileTree from '@components/core/dek-filetree';
 import DekItem from '@components/core/dek-item';
 import DekSelect from '@components/core/dek-select';
-import DekCommonAppModal, { type DekCommonAppModalProps } from '@components/core/modal';
+import type { DekCommonAppModalProps } from '@components/core/modal';
+import DekCommonAppModal from '@components/core/modal';
 import { ENVEntry, ENVEntryLabel } from '@components/modals/common';
+import type { ActiveGame } from '@hooks/use-active-game';
 import useActiveGame from '@hooks/use-active-game';
+import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError } from '@hooks/use-common-checks';
+import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
+import useCommonChecks from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { ArchiveEntry } from '@main/dek/archive-handler';
-import type { TypeFunctionWithArgs } from '@typed/common';
+import type { TypeFunctionWithArgs, UseStatePair } from '@typed/common';
 import type { FileInfo, IModInfoWithSavedConfig, LocalModConfig, ModConfig } from '@typed/palhub';
 // import { webUtils } from 'electron';
 import type {
@@ -143,31 +147,31 @@ export default function AddLocalModModal({
     },
 }: AddLocalModModalProps): ReactElement<AddLocalModModalProps> {
     console.log('initialModData:', initialModData);
-    const applog = useAppLogger('AddLocalModModal');
+    const applog: AppLogger = useAppLogger('AddLocalModModal');
     const onCancel: VoidFunction = useCallback((): void => {
         setShow(false);
         refreshModList();
     }, [setShow, refreshModList]);
-    const { requiredModulesLoaded: _requiredModulesLoaded, commonAppData } = useCommonChecks();
-    const [modName, setModName] = useState<string>('');
-    const [modVersion, setModVersion] = useState<string>('');
-    const [modAuthor, setModAuthor] = useState<string>('');
-    const [modDescription, setModDescription] = useState<string>('');
-    const [modThumbnail, setModThumbnail] = useState<string>('');
-    const [fileID, setFileID] = useState<string | number>('local');
-    const [modID, setModID] = useState<string>('');
-    const [installType, setInstallType] = useState<number>(0);
+    const { handleError, requiredModulesLoaded: _requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
+    const [modName, setModName]: UseStatePair<string> = useState<string>('');
+    const [modVersion, setModVersion]: UseStatePair<string> = useState<string>('');
+    const [modAuthor, setModAuthor]: UseStatePair<string> = useState<string>('');
+    const [modDescription, setModDescription]: UseStatePair<string> = useState<string>('');
+    const [modThumbnail, setModThumbnail]: UseStatePair<string> = useState<string>('');
+    const [fileID, setFileID]: UseStatePair<string | number> = useState<string | number>('local');
+    const [modID, setModID]: UseStatePair<string> = useState<string>('');
+    const [installType, setInstallType]: UseStatePair<number> = useState<number>(0);
 
-    // const api_key = commonAppData?.apis?.nexus;
+    // const api_key: string | null = commonAppData?.apis?.nexus;
     const game_path: string | undefined = commonAppData?.selectedGame?.path;
 
-    const { activeGame } = useActiveGame();
-    const { t, tA: _tA } = useLocalization();
+    const { activeGame }: ActiveGame = useActiveGame();
+    const { t /* , tA */ }: Localization = useLocalization();
     const game: GameInformation | undefined = activeGame;
-    // const game = commonAppData?.selectedGame;
+    // const game: GameInformation | undefined = commonAppData?.selectedGame;
 
-    const [filetree, setFiletree] = useState<FileTreeEntry | null>(null);
-    const [droppedFile, setDroppedFile] = useState<FileInfo | null>(null);
+    const [filetree, setFiletree]: UseStatePair<FileTreeEntry | null> = useState<FileTreeEntry | null>(null);
+    const [droppedFile, setDroppedFile]: UseStatePair<FileInfo | null> = useState<FileInfo | null>(null);
 
     const handleDragOver: DragEventHandler<HTMLDivElement> = useCallback((e: DragEvent<HTMLDivElement>): void => {
         e.preventDefault();
@@ -178,8 +182,8 @@ export default function AddLocalModModal({
         (e: DragEvent<HTMLDivElement>): void => {
             e.preventDefault();
             e.stopPropagation();
-            if (!game_path) return;
-            (async () => {
+            (async (): Promise<void> => {
+                if (!game_path) return;
                 const files: FileList = e.dataTransfer.files;
                 if (files.length > 0) {
                     const newDroppedfile: FileInfo | undefined = files[0] as FileInfo | undefined; // Handle the first dropped file only
@@ -213,7 +217,7 @@ export default function AddLocalModModal({
                     setFiletree(filetree);
                     setModName(newDroppedfile.name);
 
-                    let selectedInstallType = 0;
+                    let selectedInstallType: number = 0;
                     if (install_path === game_path) selectedInstallType = 0;
                     if (install_path.endsWith('Binaries')) selectedInstallType = 1;
                     if (install_path.endsWith('Win64')) selectedInstallType = 2;
@@ -225,17 +229,17 @@ export default function AddLocalModModal({
                     console.log('selectedInstallType:', selectedInstallType, install_path);
                     setInstallType(selectedInstallType);
                 }
-            })().catch((error: unknown) => handleError(error, applog));
+            })().catch((error: unknown): void => handleError(error, applog));
         },
-        [game_path]
+        [game_path, handleError, applog]
     );
 
     const handleInstall: MouseEventHandler<HTMLButtonElement> = useCallback(
         (e: MouseEvent<HTMLButtonElement>): void => {
             e.preventDefault();
             e.stopPropagation();
-            if (!droppedFile || !game_path) return;
-            (async () => {
+            (async (): Promise<void> => {
+                if (!droppedFile || !game_path) return;
                 // installMod(cache_path, game_path, mod, file)
                 const filename: string | undefined = droppedFile.path.split(/[\\/]/).pop();
                 if (!filename) return;
@@ -243,10 +247,11 @@ export default function AddLocalModModal({
                 const mod: Pick<IModInfoWithSavedConfig, 'version' | 'name' | 'mod_id'> = {
                     version: 'local',
                     name: modName,
+                    mod_id: modID,
                 };
                 const file: Pick<IModInfoWithSavedConfig, 'version' | 'file_name' | 'file_id'> = {
                     file_name: filename,
-                    file_id: 'local',
+                    file_id: fileID,
                     version: modVersion,
                 };
 
@@ -294,20 +299,23 @@ export default function AddLocalModModal({
                     extraJsonProps as unknown as Partial<ModConfig>
                 );
                 onCancel();
-            })().catch((error: unknown) => handleError(error, applog));
+            })().catch((error: unknown): void => handleError(error, applog));
         },
         [
             droppedFile,
             game_path,
             modName,
+            modID,
+            fileID,
             modVersion,
             modAuthor,
             modDescription,
-            modID,
-            fileID,
             installType,
             modThumbnail,
             onCancel,
+            applog,
+            commonAppData?.selectedGame?.unreal_root,
+            handleError,
         ]
     );
 
@@ -320,9 +328,9 @@ export default function AddLocalModModal({
             (async (): Promise<void> => {
                 await window.palhub('uninstallMod', game_path, initialModData, undefined, true);
                 onCancel();
-            })().catch((error: unknown) => handleError(error, applog));
+            })().catch((error: unknown): void => handleError(error, applog));
         },
-        [game_path, initialModData]
+        [game_path, initialModData, handleError, applog, onCancel]
     );
 
     useEffect((): void => {
@@ -347,7 +355,7 @@ export default function AddLocalModModal({
             setDroppedFile(null);
             setFiletree(null);
         }
-    }, [show]);
+    }, [show, initialModData]);
 
     const headerText: string = t('modals.local-mod.head', { game });
     const modalOptions: DekCommonAppModalProps = { show, setShow, onCancel, headerText, showX: true };
@@ -433,7 +441,7 @@ export default function AddLocalModModal({
                                 <ENVEntry
                                     disabled={!!initialModData?.version}
                                     value={modVersion}
-                                    onClick={() => {}}
+                                    onClick={(): void => {}}
                                     updateSetting={(_name: string, value: string): void => setModVersion(value)}
                                     name={t('/mods.mod_version')}
                                     tooltip={t('/mods.mod_version')}

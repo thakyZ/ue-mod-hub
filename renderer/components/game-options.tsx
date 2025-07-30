@@ -4,7 +4,7 @@ import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { UseStatePair, VoidFunctionWithArgs } from '@typed/common';
 import type { OpenDialogReturnValue } from 'electron';
@@ -30,7 +30,7 @@ export default function GameConfiguration({
     const [knownGamePath, setKnownGamePath]: UseStatePair<string | undefined> = useState<string | undefined>(
         tempGame?.path
     );
-    const { t, tA }: UseLocalizationReturn = useLocalization();
+    const { t, tA }: Localization = useLocalization();
 
     const handleGamePathChange: VoidFunctionWithArgs<[_name: string, new_value: string]> = useCallback(
         (_name: string, new_value: string): void => {

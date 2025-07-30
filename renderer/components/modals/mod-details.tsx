@@ -19,11 +19,11 @@ import DekCommonAppModal from '@components/core/modal';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError, parseIntSafe } from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import useCommonChecks, { parseIntSafe } from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 // import useMediaQuery from '@hooks/use-media-query';
-import type { UseScreenSizeReturn } from '@hooks/use-screen-size';
+import type { ScreenSize } from '@hooks/use-screen-size';
 import useScreenSize from '@hooks/use-screen-size';
 import type { IModInfoWithSavedConfig } from '@main/dek/palhub-types';
 import type { IFileInfo as NexusIFileInfo, IModFiles as NexusIModFiles } from '@nexusmods/nexus-api';
@@ -53,9 +53,9 @@ export default function ModDetailsModal({
     refreshModList,
 }: ModDetailsModalProps): ReactElement<ModDetailsModalProps> | null {
     const applog: AppLogger = useAppLogger('ModDetailsModal');
-    const { commonAppData }: CommonChecks = useCommonChecks();
-    const { t, tA }: UseLocalizationReturn = useLocalization();
-    const { isDesktop }: UseScreenSizeReturn = useScreenSize();
+    const { handleError, commonAppData }: CommonChecks = useCommonChecks();
+    const { t, tA }: Localization = useLocalization();
+    const { isDesktop }: ScreenSize = useScreenSize();
     const fullscreen: boolean = !isDesktop;
 
     // if (!mod) mod = {name: 'n/a', author: 'n/a', summary: 'n/a', description: 'n/a', picture_url: 'n/a'};
@@ -66,7 +66,7 @@ export default function ModDetailsModal({
     const [modFiles, setModFiles]: UseStatePair<NexusIFileInfo[]> = useState<NexusIFileInfo[]>([]);
     const [showArchive, setShowArchive]: UseStatePair<boolean> = useState<boolean>(false);
 
-    const onCancel = useCallback((): void => {
+    const onCancel: VoidFunction = useCallback((): void => {
         setShow(false);
         setTimeout((): void => {
             setModpageID(0);
@@ -86,7 +86,7 @@ export default function ModDetailsModal({
             try {
                 const api_key: string | null = await window.uStore.get<string | null>('api-keys.nexus');
                 if (!api_key) return;
-                const game_slug = commonAppData?.selectedGame?.map_data.providers.nexus;
+                const game_slug: string | undefined = commonAppData?.selectedGame?.map_data.providers.nexus;
                 const result: NexusIModFiles = await window.nexus(
                     api_key,
                     'getModFiles',
@@ -103,15 +103,17 @@ export default function ModDetailsModal({
             } catch (error: unknown) {
                 console.log('updateModFiles error:', error);
             }
-        })().catch((error: unknown) => handleError(error, applog));
-    }, [mod]);
+        })().catch((error: unknown): void => handleError(error, applog));
+    }, [mod, applog, handleError, commonAppData?.selectedGame?.map_data.providers.nexus]);
 
     if (!mod) return null;
 
     const height: string = fullscreen ? 'calc(100vh - 96px)' : 'calc(100vh / 4 * 3)';
     const headerText: string = `${mod.name} by ${mod.author}`;
     const modalOptions: DekCommonAppModalProps = { show, setShow, onCancel, headerText, showX: true };
-    const hasArchivedFiles = modFiles.some((file) => file && file.category_name === 'ARCHIVED');
+    const hasArchivedFiles: boolean = modFiles.some(
+        (file: NexusIFileInfo): boolean => file && file.category_name === 'ARCHIVED'
+    );
     return (
         <DekCommonAppModal {...modalOptions}>
             <DekDiv type="DekBody" className="d-block overflow-y-scroll p-2" style={{ height }}>
@@ -124,7 +126,7 @@ export default function ModDetailsModal({
                         // disabled={true}
                         choices={modpageTypes}
                         active={modpageID}
-                        onClick={(i, value) => {
+                        onClick={(i: number, value: string | number): void => {
                             console.log(`Setting Page: ${value}`);
                             setModpageID(i);
                         }}

@@ -9,8 +9,8 @@ import * as CommonIcons from '@config/common-icons';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { ensureError, handleError } from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import useCommonChecks, { ensureError } from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { OptionalMouseEventHandler, UseStatePair } from '@typed/common';
 import type { RendererIpcEvent } from 'electron-ipc-extended';
@@ -31,9 +31,9 @@ export declare interface LogsPageProps {
 // };
 
 export default function LogsPage(_props: LogsPageProps): ReactElement<LogsPageProps> {
-    const { t, tA }: UseLocalizationReturn = useLocalization();
+    const { t, tA }: Localization = useLocalization();
     const applog: AppLogger = useAppLogger('LogsPage');
-    const { requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
+    const { requiredModulesLoaded, commonAppData, handleError }: CommonChecks = useCommonChecks();
     // const cache_dir: string | null = commonAppData?.cache;
     // const game_path: string | undefined = commonAppData?.selectedGame?.path;
     const game_data: GameInformation | undefined = commonAppData?.selectedGame;
@@ -53,7 +53,7 @@ export default function LogsPage(_props: LogsPageProps): ReactElement<LogsPagePr
             if (!logPath) return;
             await window.ipc.invoke('open-file-location', logPath);
         })().catch((error: unknown) => handleError(error, applog));
-    }, [logPageID, appLogPath, ue4ssLogPath]);
+    }, [logPageID, appLogPath, ue4ssLogPath, handleError, applog]);
 
     //!? todo?: only watch the file for selected page??
     useEffect((): void | VoidFunction => {
@@ -100,17 +100,21 @@ export default function LogsPage(_props: LogsPageProps): ReactElement<LogsPagePr
             } catch (error: unknown) {
                 setUE4SSLogs(`Error fetching logs:\n${ensureError(error).message}`);
             }
-        })().catch((error: unknown) => handleError(error, applog));
+        })().catch((error: unknown): void => handleError(error, applog));
 
         // Remove the watcher when the component is unmounted
         return () => {
             removeWatchedFileChangeHandler();
             if (appLogPath)
-                window.palhub('unwatchFileChanges', appLogPath).catch((error: unknown) => handleError(error, applog));
+                window
+                    .palhub('unwatchFileChanges', appLogPath)
+                    .catch((error: unknown): void => handleError(error, applog));
             if (ue4ssLogPath)
-                window.palhub('unwatchFileChanges', ue4ssLogPath).catch((error: unknown) => handleError(error, applog));
+                window
+                    .palhub('unwatchFileChanges', ue4ssLogPath)
+                    .catch((error: unknown): void => handleError(error, applog));
         };
-    }, []);
+    }, [appLogPath, game_data, requiredModulesLoaded, ue4ssLogPath, handleError, applog]);
 
     const scrollToTop: OptionalMouseEventHandler<HTMLButtonElement> = useCallback(
         (_event?: MouseEvent<HTMLButtonElement>): void => {
@@ -152,7 +156,7 @@ export default function LogsPage(_props: LogsPageProps): ReactElement<LogsPagePr
     useEffect((): void => {
         if (scrollPosition < 0.9) return;
         scrollToBottom();
-    }, [appLogs, ue4ssLogs, logPageID]);
+    }, [appLogs, ue4ssLogs, logPageID, scrollToBottom, scrollPosition]);
 
     const logString = [appLogs, ue4ssLogs][logPageID];
 

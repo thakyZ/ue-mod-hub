@@ -50,13 +50,19 @@ const nexusApiCache: Dekache = new Dekache({ name: 'need some cache bruh?', mins
  */
 const nexusApiModDataStore: DEAPElectronStore = new Store({ name: '[dek.ue.nexus.cache]' });
 
-/** @type {LengthOfOneHour} */
+/**
+ * @type {LengthOfOneHour}
+ */
 const lengthOfOneHour: LengthOfOneHour = (1000 * 60 * 60) as LengthOfOneHour;
 
-/** @type {LengthOfOneDay} */
+/**
+ * @type {LengthOfOneDay}
+ */
 const lengthOfOneDay: LengthOfOneDay = (lengthOfOneHour * 24) as LengthOfOneDay;
 
-/** @type {LengthOfOneWeek} */
+/**
+ * @type {LengthOfOneWeek}
+ */
 const lengthOfOneWeek: LengthOfOneWeek = (lengthOfOneDay * 7) as LengthOfOneWeek; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 /**

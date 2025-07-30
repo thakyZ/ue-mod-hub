@@ -11,14 +11,18 @@ import MetaHead from '@components/core/metahead';
 import Navbar from '@components/core/navbar';
 import NavbarModal from '@components/modals/navbar';
 import NxmLinkModal from '@components/modals/nxm-link';
+import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
+import type { CommonChecks } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
-import type { DeepLinkNXMType, DeepLinkType } from '@hooks/use-deep-link-listener';
+import type { DeepLinkListener, DeepLinkNXMType, DeepLinkType } from '@hooks/use-deep-link-listener';
 import useDeepLinkListener from '@hooks/use-deep-link-listener';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { Themes, UseThemeSystemReturn } from '@hooks/use-theme-system';
 import useThemeSystem, { THEMES } from '@hooks/use-theme-system';
 import useWindowNameFromDEAP from '@hooks/use-window-name-from-deap';
+import type { UseStatePair } from '@typed/common';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import type { CSSProperties, HTMLAttributes, ReactElement } from 'react';
@@ -53,14 +57,16 @@ function GoogleTagManager(): ReactElement<DekAppLayoutWrapperProps> | null {
 export default function DekAppLayoutWrapper({
     children,
 }: DekAppLayoutWrapperProps): ReactElement<DekAppLayoutWrapperProps> {
-    const logger = useAppLogger('core/layout');
-    const { deepLink, linkChanged, consumeDeepLink } = useDeepLinkListener();
-    const { requiredModulesLoaded: _requiredModulesLoaded, commonAppData } = useCommonChecks();
-    const [deepLinkData, setDeepLinkData] = useState<DeepLinkType | DeepLinkNXMType | undefined>();
+    const logger: AppLogger = useAppLogger('core/layout');
+    const { deepLink, linkChanged, consumeDeepLink }: DeepLinkListener = useDeepLinkListener();
+    const { requiredModulesLoaded: _requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
+    const [deepLinkData, setDeepLinkData]: UseStatePair<DeepLinkType | DeepLinkNXMType | undefined> = useState<
+        DeepLinkType | DeepLinkNXMType | undefined
+    >();
     const initialGame: string = (commonAppData?.selectedGame?.id ?? 'none').replace('-demo', '');
     const { theme_id, setThemeID, bg_id, setBgID, bg_opac, setBgOpac } = useThemeSystem(initialGame);
-    const [showNavbarModal, setShowNavbarModal] = useState<boolean>(false);
-    const [showNxmModal, setShowNxmModal] = useState<boolean>(false);
+    const [showNavbarModal, setShowNavbarModal]: UseStatePair<boolean> = useState<boolean>(false);
+    const [showNxmModal, setShowNxmModal]: UseStatePair<boolean> = useState<boolean>(false);
     const windowName: string = useWindowNameFromDEAP();
     const theme: string = `/themes/${THEMES[theme_id]}.css`;
     const active_route: string = useRouter().pathname;
@@ -71,7 +77,7 @@ export default function DekAppLayoutWrapper({
     const can_show_navbar: boolean = !!windowName && !['help', 'setup', 'changes'].includes(windowName);
     const nonav_page: string = can_show_navbar ? '' : 'game-bg-full';
     // const loadDelay: number = can_show_navbar ? 10000 : 0;
-    const { ready, t: _t } = useLocalization(null); //, loadDelay);
+    const { ready, t: _t }: Localization = useLocalization(null); //, loadDelay);
     // const isActuallyReady: boolean = ready && !!commonAppData?.selectedGame?.id;
 
     const modals: Record<string, VoidFunction> = {

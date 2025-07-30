@@ -11,14 +11,14 @@ import { ensureEntryValueType, ENVEntry, ENVEntryLabel } from '@components/modal
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError } from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import useCommonChecks from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
-import type { UseScreenSizeReturn } from '@hooks/use-screen-size';
+import type { ScreenSize } from '@hooks/use-screen-size';
 import useScreenSize from '@hooks/use-screen-size';
 import type { Locale as Ue4ssLocale } from '@locales/*-ue4ss.json';
 import type { Ue4ssSettings } from '@main/dek/game-map';
-import type { TypeFunctionWithArgs } from '@typed/common';
+import type { TypeFunctionWithArgs, VoidFunctionWithArgs } from '@typed/common';
 import type { BooleanSet, UseStatePair } from '@typed/common';
 import replaceUe4ssIniKeyValue from '@utils/replace-ini-key';
 import { parse } from 'ini';
@@ -76,11 +76,11 @@ export default function Ue4ssSettingsModal({
     setShow,
 }: Ue4ssSettingsModalProps): ReactElement<Ue4ssSettingsModalProps> {
     const applog: AppLogger = useAppLogger('Ue4ssSettingsModal');
-    const { isDesktop }: UseScreenSizeReturn = useScreenSize();
+    const { isDesktop }: ScreenSize = useScreenSize();
     const fullscreen: boolean = !isDesktop;
-    const { requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
+    const { handleError, requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
     const game: GameInformation | undefined = commonAppData?.selectedGame;
-    const { t, tA }: UseLocalizationReturn<Ue4ssLocale> = useLocalization('ue4ss');
+    const { t, tA }: Localization<Ue4ssLocale> = useLocalization('ue4ss');
 
     // const height: string = fullscreen ? 'calc(100vh - 182px)' : 'calc(100vh / 4 * 2 + 26px)';
     const height: string = fullscreen ? 'calc(100vh - 96px)' : 'calc(100vh / 4 * 2 + 26px)';
@@ -98,8 +98,19 @@ export default function Ue4ssSettingsModal({
         }, 250);
     }, [setShow]);
 
+    type UpdateSettingFunction = VoidFunctionWithArgs<
+        [
+            key: string,
+            value:
+                | TypeFunctionWithArgs<[data: Ue4ssSettings | null], string | boolean | number>
+                | string
+                | boolean
+                | number,
+        ]
+    >;
+
     // function to call for updating individual setting
-    const updateSetting = useCallback(
+    const updateSetting: UpdateSettingFunction = useCallback(
         (
             key: string,
             value:
@@ -153,9 +164,9 @@ export default function Ue4ssSettingsModal({
                 // const new_ini_string = stringify(settings);
                 await window.palhub('writeFile', ini_path, updated_ini, { encoding: 'utf8' });
                 setHasChanges(false);
-            })(requiredModulesLoaded, game, settings, rawINI).catch((error: unknown) => handleError(error, applog));
+            })(requiredModulesLoaded, game, settings, rawINI).catch((error: unknown): void => handleError(error, applog));
         },
-        [requiredModulesLoaded, game, settings, rawINI]
+        [requiredModulesLoaded, game, settings, rawINI, handleError, applog]
     );
 
     useEffect((): void => {
@@ -166,8 +177,8 @@ export default function Ue4ssSettingsModal({
             const ini_string: string = (await window.palhub('readFile', ini_path, { encoding: 'utf8' })) as string;
             setSettings(parse(ini_string) as Ue4ssSettings);
             setRawINI(ini_string);
-        })(requiredModulesLoaded, game, show).catch((error: unknown) => handleError(error, applog));
-    }, [requiredModulesLoaded, game, show]);
+        })(requiredModulesLoaded, game, show).catch((error: unknown): void => handleError(error, applog));
+    }, [requiredModulesLoaded, game, show, handleError, applog]);
 
     // if (settings) console.log(settings);
 
@@ -255,7 +266,10 @@ export default function Ue4ssSettingsModal({
                                             )
                                                 ? 'numbool'
                                                 : (ensureEntryValueType(value) as HTMLInputTypeAttribute);
-                                            const updater = (_name: string, value: TValue2): void =>
+                                            const updater: VoidFunctionWithArgs<[_name: string, value: TValue2]> = (
+                                                _name: string,
+                                                value: TValue2
+                                            ): void =>
                                                 updateSetting(`${key}.${_name}`, (): string | number | boolean => {
                                                     return type === 'numbool'
                                                         ? value
@@ -263,7 +277,7 @@ export default function Ue4ssSettingsModal({
                                                             : '0'
                                                         : (value as string | number | boolean);
                                                 });
-                                            const tooltip = t(
+                                            const tooltip: string = t(
                                                 `${key}.${name as string}.desc` as `Overrides.ModsFolderPath.desc`
                                             );
                                             return (

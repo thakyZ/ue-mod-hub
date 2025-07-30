@@ -6,22 +6,23 @@
 
 // import assert from 'node:assert';
 
+import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import type { TypeFunction } from '@typed/common';
+import type { TypeFunction, UseStatePair } from '@typed/common';
 import type { RendererIpcEvent } from 'electron-ipc-extended';
 import type { HTMLAttributes, ReactElement } from 'react';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-export declare interface DeepLinkContextType {
+export declare interface DeepLinkListener {
     deepLink: string | null;
     linkChanged: boolean;
-    consumeDeepLink: () => DeepLinkType | DeepLinkNXMType | undefined;
+    consumeDeepLink: TypeFunction<DeepLinkType | DeepLinkNXMType | undefined>;
 }
 
 export declare type DeepLinkProviderProps = Pick<HTMLAttributes<HTMLDivElement>, 'children'>;
 
 // Context for Localization
-const DeepLinkContext = createContext<DeepLinkContextType>(undefined!);
+const DeepLinkContext = createContext<DeepLinkListener>({} as DeepLinkListener);
 
 export declare interface DeepLinkType {
     segments: string[];
@@ -75,17 +76,20 @@ function parseDeepLinkNXM(link: string | URL): DeepLinkType | DeepLinkNXMType {
 }
 
 // DeepLink Provider Component
-export const DeepLinkProvider = ({ children }: DeepLinkProviderProps): ReactElement<DeepLinkProviderProps> => {
-    const [deepLink, setDeepLink] = useState<string | null>('');
-    const [linkChanged, setLinkChanged] = useState<boolean>(false);
-    const logger = useAppLogger('hooks/use-deep-link-listener');
+export function DeepLinkProvider({ children }: DeepLinkProviderProps): ReactElement<DeepLinkProviderProps> {
+    const [deepLink, setDeepLink]: UseStatePair<string | null> = useState<string | null>('');
+    const [linkChanged, setLinkChanged]: UseStatePair<boolean> = useState<boolean>(false);
+    const logger: AppLogger = useAppLogger('hooks/use-deep-link-listener');
 
     useEffect((): VoidFunction | void => {
         if (!window.ipc || deepLink === null || deepLink.length > 0) return;
-        const removeLinkListener = window.ipc.on('open-deap-link', (_e: RendererIpcEvent, link: string): void => {
-            void logger('info', `Received DEAP Link: ${link}`);
-            setDeepLink(link);
-        });
+        const removeLinkListener: VoidFunction = window.ipc.on(
+            'open-deap-link',
+            (_event: RendererIpcEvent, link: string): void => {
+                void logger('info', `Received DEAP Link: ${link}`);
+                setDeepLink(link);
+            }
+        );
         return (): void => removeLinkListener();
     }, [deepLink, logger]);
 
@@ -97,17 +101,17 @@ export const DeepLinkProvider = ({ children }: DeepLinkProviderProps): ReactElem
     // prettier-ignore
     const consumeDeepLink: TypeFunction<DeepLinkType | DeepLinkNXMType | undefined> = useCallback((): DeepLinkType | DeepLinkNXMType | undefined => {
         if (!deepLink) return undefined;
-        const consumed = parseDeepLinkNXM(deepLink);
+        const consumed: DeepLinkType | DeepLinkNXMType = parseDeepLinkNXM(deepLink);
         setLinkChanged(false);
         setDeepLink(null);
         return consumed;
     }, [deepLink]);
 
-    const exposed: DeepLinkContextType = { deepLink, linkChanged, consumeDeepLink };
+    const exposed: DeepLinkListener = { deepLink, linkChanged, consumeDeepLink };
     return <DeepLinkContext.Provider value={exposed}>{children}</DeepLinkContext.Provider>;
-};
+}
 
 // Export actual hook to useLocalization
-export default function useDeepLinkListener(): DeepLinkContextType {
+export default function useDeepLinkListener(): DeepLinkListener {
     return useContext(DeepLinkContext);
 }

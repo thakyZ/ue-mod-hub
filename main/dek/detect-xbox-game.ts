@@ -53,10 +53,8 @@ function getInstalledXboxGames(): Promise<InstalledXboxGame[]> {
  */
 export default async function detectXboxGameInstallation(gameName: string): Promise<void> {
     try {
-        /** @type {InstalledXboxGame[]} */
         const games: InstalledXboxGame[] = await getInstalledXboxGames();
-        /** @type {InstalledXboxGame | undefined} */
-        const game: InstalledXboxGame | undefined = games.find(
+        const game: InstalledXboxGame | undefined = games.find<InstalledXboxGame, InstalledXboxGame>(
             (g) => g.name && g.name.toLowerCase().includes(gameName.toLowerCase())
         );
         if (game) {

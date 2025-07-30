@@ -35,20 +35,20 @@
     "moduleResolution": "Node",                          /* Specify how TypeScript looks up a file from a given module specifier. */
     "baseUrl": ".",                                      /* Specify the base directory to resolve non-relative module names. */
     "paths": {                                           /* Specify a set of entries that re-map imports to additional lookup locations. */
-      "@main/*": [ "./main/*" ],
-      "@utils/*": [ "./renderer/utils/*" ],
-      "@hooks/*": [ "./renderer/hooks/*" ],
-      "@config/*": [ "./renderer/config/*" ],
-      "@styles/*": [ "./renderer/styles/*" ],
-      "@svgs/*": [ "./renderer/public/svgs/*" ],
-      "@markdown/*": [ "./renderer/markdown/*" ],
-      "@components/*": [ "./renderer/components/*" ],
-      "@locales/*": [ "./renderer/locales/*" ],
-      "@typed/*": [ "./types/*", "./main/*-types", "./main/dek/*-types", "./main/ipc-handlers/*-types",
-        "./renderer/*-types", "./renderer/components/*-types", "./renderer/components/core/*-types",
-        "./renderer/components/markdown/*-types", "./renderer/components/modals/*-types", "./renderer/config/*-types",
-        "./renderer/functions/*-types", "./renderer/hooks/*-types", "./renderer/pages/*-types",
-        "./renderer/utils/*-types"
+      "@main/*": [ "main/*" ],
+      "@utils/*": [ "renderer/utils/*" ],
+      "@hooks/*": [ "renderer/hooks/*" ],
+      "@config/*": [ "renderer/config/*" ],
+      "@styles/*": [ "renderer/styles/*" ],
+      "@svgs/*": [ "renderer/public/svgs/*" ],
+      "@markdown/*": [ "renderer/markdown/*" ],
+      "@components/*": [ "renderer/components/*" ],
+      "@locales/*": [ "renderer/locales/*" ],
+      "@typed/*": [ "types/*", "main/*-types", "main/dek/*-types", "main/ipc-handlers/*-types",
+        "renderer/*-types", "renderer/components/*-types", "renderer/components/core/*-types",
+        "renderer/components/markdown/*-types", "renderer/components/modals/*-types", "renderer/config/*-types",
+        "renderer/functions/*-types", "renderer/hooks/*-types", "renderer/pages/*-types",
+        "renderer/utils/*-types"
       ]
     },
     // "rootDirs": [                                     /* Allow multiple folders to be treated as one when resolving modules. */

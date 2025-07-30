@@ -7,7 +7,8 @@ import BBCodeRenderer from '@components/core/bbcode';
 // import DekCheckbox from '@components/core/dek-checkbox';
 import DekChoice from '@components/core/dek-choice';
 // import DekSelect from '@components/core/dek-select';
-import ModCardComponent, { type ModCardComponentProps, type ModCardComponentPropsMod } from '@components/mod-card';
+import type { ModCardComponentProps, ModCardComponentPropsMod } from '@components/mod-card';
+import ModCardComponent from '@components/mod-card';
 // import { ENVEntry, ENVEntryLabel } from '@components/modals/common';
 import AddLocalModModal from '@components/modals/local-mod';
 import CheckModsModal from '@components/modals/mod-check';
@@ -17,8 +18,8 @@ import useAppLogger from '@hooks/use-app-logger';
 // import ModListModal from '@components/modals/mod-list';
 // import * as CommonIcons from '@config/common-icons';
 import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError, parseIntSafe } from '@hooks/use-common-checks';
-import type { LocaleLeaves, UseLocalizationReturn } from '@hooks/use-localization';
+import useCommonChecks, { parseIntSafe } from '@hooks/use-common-checks';
+import type { LocaleLeaves, Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { Games } from '@main/config';
 import type {
@@ -79,6 +80,7 @@ import Image from 'react-bootstrap/Image';
  * }
  */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const BANNED_MODS: number[] = [];
 
 function determineAdvertizedMods(slug: Games): number[] {
@@ -98,8 +100,8 @@ type ModsPageModType = ModCardComponentPropsMod & Pick<IModInfoWithSavedConfig, 
 export default function ModsPage(): ReactElement {
     // const router = useRouter();
     const applog: AppLogger = useAppLogger('ModsPage');
-    const { t, tA }: UseLocalizationReturn = useLocalization();
-    const { requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
+    const { t, tA }: Localization = useLocalization();
+    const { handleError, requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
     const cache_dir: string | null = commonAppData?.cache;
     const game_path: string | undefined = commonAppData?.selectedGame?.path;
     const game_data: GameInformation | undefined = commonAppData?.selectedGame;
@@ -114,6 +116,7 @@ export default function ModsPage(): ReactElement {
     const [localMod, setLocalMod] = useState<ModsPageModType | null>(null);
     const [modlistID, setModlistID] = useState<number>(0);
     const [mods, setMods] = useState<ModsPageModType[]>([]);
+    const [advertisedMods, setAdvertisedMods] = useState<number[]>([]);
     const [localMods, setLocalMods] = useState<ModsPageModType[]>([]);
     const [ads, setAds] = useState<ModsPageModType[]>([]);
     const modlistTypes: string[] = (tA('/mods.tabs' as LocaleLeaves, 5) as unknown as string[]) ?? [];
@@ -121,37 +124,11 @@ export default function ModsPage(): ReactElement {
 
     const showSaveModList: boolean = modlistID === 0;
     // https://www.nexusmods.com/palworld/mods/1204
-    const advertised_mods: number[] = commonAppData?.selectedGame?.id
-        ? determineAdvertizedMods(commonAppData?.selectedGame?.id)
-        : [];
 
     // useEffect(() => {
     //     if (!requiredModulesLoaded) return;
     //     redirectIfNeedConfigured();
     // }, [requiredModulesLoaded]);
-
-    const getInstalledMods: PromiseTypeFunctionWithArgs<[api_key: string, game_path: string], ModsPageModType[]> = async (
-        api_key: string,
-        game_path: string
-    ): Promise<ModsPageModType[]> => {
-        const config: PalHubConfig = (await window.palhub('readJSON', game_path)) as PalHubConfig;
-        if (!config || (!config.mods && !config.local_mods)) return [];
-        const mod_ids: number[] = Object.keys((config.mods ??= {})).map((mod_id: string): number => parseIntSafe(mod_id)!);
-        const mods_from_nexus: ModsPageModType[] = await Promise.all(
-            mod_ids.map(async (mod_id: number): Promise<ModsPageModType> => {
-                const nexus_data: ModsPageModType = await window.nexus(api_key, 'getModInfo', mod_id, slug);
-                nexus_data.saved_config = config.mods[mod_id];
-                nexus_data.installed = true;
-                return nexus_data;
-            })
-        );
-
-        console.log('config.mods:', config.mods);
-        if (!config.local_mods) return mods_from_nexus;
-        const local_mods: ModsPageModType[] = Object.values(config.local_mods).filter((mod) => mod.local);
-        console.log('local_mods:', local_mods);
-        return [...mods_from_nexus, ...local_mods];
-    };
 
     const getDownloadedMods: PromiseTypeFunctionWithArgs<[api_key: string, cache_dir: string], ModsPageModType[]> =
         useCallback(
@@ -180,13 +157,40 @@ export default function ModsPage(): ReactElement {
                     })
                 );
             },
-            [game_path, cache_dir, commonAppData?.selectedGame?.id, slug]
+            [slug]
         );
 
     // load initial settings from store
     useEffect((): void => {
         (async (): Promise<void> => {
             if (!requiredModulesLoaded || !api_key || !cache_dir || !game_path) return;
+            setAdvertisedMods(
+                commonAppData?.selectedGame?.id ? determineAdvertizedMods(commonAppData?.selectedGame?.id) : []
+            );
+            const getInstalledMods: PromiseTypeFunctionWithArgs<
+                [api_key: string, game_path: string],
+                ModsPageModType[]
+            > = async (api_key: string, game_path: string): Promise<ModsPageModType[]> => {
+                const config: PalHubConfig = (await window.palhub('readJSON', game_path)) as PalHubConfig;
+                if (!config || (!config.mods && !config.local_mods)) return [];
+                const mod_ids: number[] = Object.keys((config.mods ??= {})).map(
+                    (mod_id: string): number => parseIntSafe(mod_id)!
+                );
+                const mods_from_nexus: ModsPageModType[] = await Promise.all(
+                    mod_ids.map(async (mod_id: number): Promise<ModsPageModType> => {
+                        const nexus_data: ModsPageModType = await window.nexus(api_key, 'getModInfo', mod_id, slug);
+                        nexus_data.saved_config = config.mods[mod_id];
+                        nexus_data.installed = true;
+                        return nexus_data;
+                    })
+                );
+
+                console.log('config.mods:', config.mods);
+                if (!config.local_mods) return mods_from_nexus;
+                const local_mods: ModsPageModType[] = Object.values(config.local_mods).filter((mod) => mod.local);
+                console.log('local_mods:', local_mods);
+                return [...mods_from_nexus, ...local_mods];
+            };
             let new_mods: ModsPageModType[] | undefined = undefined;
             // // const api_key: string | null = await getApiKey();
             // // const game_path: string | undefined = await getGamePath();
@@ -218,7 +222,7 @@ export default function ModsPage(): ReactElement {
             }
             if (new_mods) {
                 let new_ads: ModsPageModType[] = await Promise.all(
-                    advertised_mods.map(async (mod_id: number): Promise<ModsPageModType> => {
+                    advertisedMods.map(async (mod_id: number): Promise<ModsPageModType> => {
                         return await window.nexus(api_key, 'getModInfo', mod_id, slug);
                     })
                 );
@@ -257,7 +261,21 @@ export default function ModsPage(): ReactElement {
                 setNeedsRefreshed(false);
             }
         })().catch((error: unknown): void => handleError(error, applog));
-    }, [modlistID, requiredModulesLoaded, needsRefreshed]);
+    }, [
+        advertisedMods,
+        commonAppData?.selectedGame?.id,
+        setMods,
+        api_key,
+        applog,
+        cache_dir,
+        game_path,
+        getDownloadedMods,
+        handleError,
+        slug,
+        modlistID,
+        requiredModulesLoaded,
+        needsRefreshed,
+    ]);
 
     const onClickModCard: VoidFunctionWithArgs<[mod: ModsPageModType]> = (mod: ModsPageModType): void => {
         console.log('clicked mod:', mod);
@@ -304,7 +322,7 @@ export default function ModsPage(): ReactElement {
             const mod: NexusIModInfo = await window.nexus(api_key, 'getModInfo', mod_id, slug);
             onClickModCard(mod);
         })().catch((error: unknown): void => handleError(error, applog));
-    }, [modSearchRef, commonAppData?.selectedGame?.id]);
+    }, [modSearchRef, api_key, applog, handleError, slug]);
 
     const refreshModList: VoidFunction = useCallback((): void => {
         setNeedsRefreshed(true);

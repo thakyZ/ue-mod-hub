@@ -4,10 +4,11 @@
 ########################################
 */
 
+import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import { parseIntSafe } from '@hooks/use-common-checks';
 import type { PropsChangeEvent } from '@typed/common';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, ChangeEventHandler, ReactElement } from 'react';
 import { useCallback } from 'react';
 
 export declare interface DekSliderProps {
@@ -21,20 +22,29 @@ export declare interface DekSliderProps {
     onChange?: ((event: PropsChangeEvent<DekSliderProps, HTMLInputElement>) => void) | undefined;
 }
 
-export default function DekSlider(props: DekSliderProps) {
-    const { label, disabled = false, min = 0, max = 99, step = 1, value = 0, thin = false, onChange = () => {} } = props;
-    const applog = useAppLogger('DekSlider');
+export default function DekSlider(props: DekSliderProps): ReactElement<DekSliderProps> {
+    const {
+        label,
+        disabled = false,
+        min = 0,
+        max = 99,
+        step = 1,
+        value = 0,
+        thin = false,
+        onChange = (): void => {},
+    } = props;
+    const applog: AppLogger = useAppLogger('DekSlider');
     const _val: number = parseIntSafe(value)!;
     const _min: number = parseIntSafe(min)!;
     const _max: number = parseIntSafe(max)!;
-    const perc_min = Math.round(((_val - _min) / (_max - _min)) * 100);
-    const perc_max = Math.round(((_val - _min) / (_max - _min)) * 100);
+    const perc_min: number = Math.round(((_val - _min) / (_max - _min)) * 100);
+    const perc_max: number = Math.round(((_val - _min) / (_max - _min)) * 100);
     // prettier-ignore
-    const _onChange = useCallback((event: ChangeEvent<HTMLInputElement>): void => {
+    const _onChange: ChangeEventHandler<HTMLInputElement> = useCallback((event: ChangeEvent<HTMLInputElement>): void => {
         void applog('info', 'value', value, 'max', max, 'min', min, '_val', _val, '_min', _min, '_max', _max, 'perc_min', perc_min, 'perc_max', perc_max);
         onChange({ ...event, props });
-    }, [value, max, min, _val, _min, _max, perc_min, perc_max]);
-    const background = `linear-gradient(to right, var(--dek-info-normal) 0%, var(--dek-secondary-normal) ${perc_min}%, transparent ${perc_max}%)`;
+    }, [_val, _min, _max, applog, value, max, min, onChange, perc_min, perc_max, props]);
+    const background: string = `linear-gradient(to right, var(--dek-info-normal) 0%, var(--dek-secondary-normal) ${perc_min}%, transparent ${perc_max}%)`;
     return (
         <div>
             {label && <label className="form-label px-1">{label}</label>}

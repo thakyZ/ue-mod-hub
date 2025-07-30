@@ -12,16 +12,18 @@ import * as CommonIcons from '@config/common-icons';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError, parseIntSafe } from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import useCommonChecks, { parseIntSafe } from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import { fetcher } from '@hooks/use-swr-json';
 import type { IDownloadURL, IFileInfo } from '@nexusmods/nexus-api';
-import type { UseStatePair } from '@typed/common';
+import type { TypeFunctionWithArgs, UseStatePair } from '@typed/common';
 import type { DownloadModFileEvent, IModInfoWithSavedConfig } from '@typed/palhub';
 import type { RendererIpcEvent } from 'electron-ipc-extended';
 import type { ReactElement } from 'react';
 import { useCallback, useEffect, useState } from 'react';
+import type { Placement } from 'react-bootstrap/esm/types';
+import type { OverlayDelay } from 'react-bootstrap/OverlayTrigger';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 // import Popover from 'react-bootstrap/Popover';
 import ProgressBar from 'react-bootstrap/ProgressBar';
@@ -41,13 +43,13 @@ export default function ModFileCard({
     showHR = true,
 }: ModFileCardProps): ReactElement<ModFileCardProps> | null {
     const applog: AppLogger = useAppLogger('ModFileCard');
-    const { requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
+    const { handleError, requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
 
     const api_key: string | null = commonAppData?.apis?.nexus;
     const game_path: string | undefined = commonAppData?.selectedGame?.path;
     const [cache_dir, _setCacheDir]: UseStatePair<string | null> = useState<string | null>(commonAppData?.cache);
 
-    const { t, /* tA, */ language }: UseLocalizationReturn = useLocalization();
+    const { t, /* tA, */ language }: Localization = useLocalization();
     const [filetree, setFiletree]: UseStatePair<FileTreeEntry | null> = useState<FileTreeEntry | null>(null);
     const [showFileTree, setShowFileTree]: UseStatePair<boolean> = useState<boolean>(false);
     const [isDownloaded, setIsDownloaded]: UseStatePair<boolean> = useState<boolean>(false);
@@ -86,7 +88,7 @@ export default function ModFileCard({
         })().catch((error: unknown): void => handleError(error, applog));
 
         return (): void => remove_dl_handler();
-    }, [showFileTree, mod, file]);
+    }, [applog, file, handleError, mod, requiredModulesLoaded, showFileTree]);
 
     useEffect((): void => {
         (async (): Promise<void> => {
@@ -103,7 +105,7 @@ export default function ModFileCard({
 
             // setCacheDir(cache);
         })().catch((error: unknown): void => handleError(error, applog));
-    }, [mod, file, commonAppData, commonAppData, cache_dir, game_path]);
+    }, [applog, cache_dir, commonAppData, file, game_path, handleError, mod, requiredModulesLoaded]);
 
     const onDownloadModZip: VoidFunction = useCallback((): void => {
         (async (): Promise<void> => {
@@ -144,7 +146,17 @@ export default function ModFileCard({
             }
         })().catch((error: unknown): void => handleError(error, applog));
         // handleCancel();
-    }, [mod, file, cache_dir, commonAppData?.selectedGame?.map_data.providers.nexus, triggers, api_key]);
+    }, [
+        applog,
+        handleError,
+        mod,
+        file,
+        cache_dir,
+        commonAppData?.selectedGame?.map_data.providers.nexus,
+        triggers,
+        requiredModulesLoaded,
+        api_key,
+    ]);
 
     const onInstallModFiles: VoidFunction = useCallback((): void => {
         (async (): Promise<void> => {
@@ -159,14 +171,14 @@ export default function ModFileCard({
             }
         })().catch((error: unknown): void => handleError(error, applog));
         // handleCancel();
-    }, [mod, file, cache_dir, game_path]);
+    }, [applog, cache_dir, file, game_path, requiredModulesLoaded, handleError, mod]);
 
     const onUninstallModFiles: VoidFunction = useCallback((): void => {
         (async (): Promise<void> => {
             if (!requiredModulesLoaded || !game_path || !('mod_id' in mod)) return;
             console.log('uninstalling mod:', mod);
             try {
-                const result = await window.palhub('uninstallMod', game_path, mod);
+                const result: boolean = await window.palhub('uninstallMod', game_path, mod);
                 setIsInstalled(false);
                 console.log({ result });
             } catch (error) {
@@ -174,7 +186,7 @@ export default function ModFileCard({
             }
         })().catch((error: unknown): void => handleError(error, applog));
         // handleCancel();
-    }, [mod, game_path, requiredModulesLoaded]);
+    }, [applog, game_path, handleError, mod, requiredModulesLoaded]);
 
     const onUninstallModCache: VoidFunction = useCallback((): void => {
         (async (): Promise<void> => {
@@ -196,7 +208,7 @@ export default function ModFileCard({
             }
         })().catch((error: unknown): void => handleError(error, applog));
         // handleCancel();
-    }, [mod, file, cache_dir]);
+    }, [applog, cache_dir, handleError, file, requiredModulesLoaded, mod]);
 
     // external_virus_scan_url
     // mod_version
@@ -205,24 +217,24 @@ export default function ModFileCard({
     // version
     // content_preview_link
 
-    const kilobytesToSize = (kilobytes: number): string => {
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const kilobytesToSize: TypeFunctionWithArgs<[kilobytes: number], string> = (kilobytes: number): string => {
+        const sizes: string[] = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
         if (kilobytes == 0) return '0 Bytes';
-        const i = Math.floor(Math.log(kilobytes) / Math.log(1024));
+        const i: number = Math.floor(Math.log(kilobytes) / Math.log(1024));
         return Math.round(kilobytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
     };
-    const delay = { show: 100, hide: 250 };
-    const placement = 'bottom';
+    const delay: OverlayDelay = { show: 100, hide: 250 };
+    const placement: Placement = 'bottom';
 
     const EyeIcon: CommonIcon = showFileTree ? CommonIcons.eye_other : CommonIcons.eye;
 
-    const buttonWidth = 54;
+    const buttonWidth: number = 54;
 
     useEffect((): void => {
         if (triggers?.autoDownload) {
             onDownloadModZip();
         }
-    }, [triggers]);
+    }, [triggers, onDownloadModZip]);
 
     if (!requiredModulesLoaded) return null;
 

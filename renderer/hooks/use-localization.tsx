@@ -52,7 +52,7 @@ const ARTIFICIAL_LOAD_DELAY: number = 1000;
 
 const VALID_NAMESPACES = ['dektionary', 'ue4ss'] as const;
 
-const DEFAULT_NAMESPACE = VALID_NAMESPACES[0];
+const DEFAULT_NAMESPACE: 'dektionary' = VALID_NAMESPACES[0];
 
 export declare type ValidNamespaces = (typeof VALID_NAMESPACES)[number];
 
@@ -96,7 +96,7 @@ export declare interface LocalizationContextType<TNamespace extends ValidNamespa
     ) => unknown;
 }
 
-export declare interface UseLocalizationReturn<TNamespace extends ValidNamespaceTypes = Locale> {
+export declare interface Localization<TNamespace extends ValidNamespaceTypes = Locale> {
     namespace: string | null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tString: (instr: string, replacers?: Record<string, any>) => string;
@@ -344,7 +344,7 @@ export default function useLocalization<
     TLocaleType extends ValidNamespaces = typeof DEFAULT_NAMESPACE,
     // prettier-ignore
     TNamespace extends TLocaleType extends 'ue4ss' ? Ue4ssLocale : Locale = TLocaleType extends 'ue4ss' ? Ue4ssLocale : Locale,
->(namespace: TLocaleType | null = null, loadDelay: number = ARTIFICIAL_LOAD_DELAY): UseLocalizationReturn<TNamespace> {
+>(namespace: TLocaleType | null = null, loadDelay: number = ARTIFICIAL_LOAD_DELAY): Localization<TNamespace> {
     const { handleError }: CommonChecks = useCommonChecks();
     const applog: AppLogger = useAppLogger('LocalizationProvider');
     const context: LocalizationContextType<TNamespace> = useContext<LocalizationContextType<TNamespace>>(
@@ -361,7 +361,7 @@ export default function useLocalization<
     }, [context, loadDelay, namespace, handleError, applog]);
 
     // Localized translation function to override global translations with namespace ones
-    const t: UseLocalizationReturn<TNamespace>['t'] = useCallback(
+    const t: Localization<TNamespace>['t'] = useCallback(
         function <TKey extends LocaleLeaves<TNamespace> = LocaleLeaves<TNamespace>>(
             key: TKey,
             replacers: Record<string, any> = {}, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -372,7 +372,7 @@ export default function useLocalization<
         [context, bundle]
     );
 
-    const tA: UseLocalizationReturn<TNamespace>['tA'] = useCallback(
+    const tA: Localization<TNamespace>['tA'] = useCallback(
         function <TKey extends LocaleLeaves<TNamespace> = LocaleLeaves<TNamespace>>(
             key: TKey,
             replacersOrSize: Record<string, any> | number = {}, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -383,7 +383,7 @@ export default function useLocalization<
         [context, bundle]
     );
 
-    const tO: UseLocalizationReturn<TNamespace>['tO'] = useCallback(
+    const tO: Localization<TNamespace>['tO'] = useCallback(
         function <TKey extends LocaleLeaves<TNamespace> = LocaleLeaves<TNamespace>>(
             key: TKey
         ): Get<TNamespace, TKey> | null {
@@ -392,7 +392,7 @@ export default function useLocalization<
         [context, bundle]
     );
 
-    const tString: UseLocalizationReturn<TNamespace>['tString'] = useCallback(
+    const tString: Localization<TNamespace>['tString'] = useCallback(
         function (
             instr: string,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

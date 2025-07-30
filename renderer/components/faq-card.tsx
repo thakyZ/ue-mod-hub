@@ -4,6 +4,7 @@
 ########################################
 */
 
+import type { UseStatePair } from '@typed/common';
 import { motion } from 'framer-motion';
 import type { ReactElement } from 'react';
 import { useState } from 'react';
@@ -19,7 +20,7 @@ export declare interface FAQCardProps {
 }
 
 export default function FAQCard({ q = '', a = '', index }: FAQCardProps): ReactElement<FAQCardProps> {
-    const [open, setOpen] = useState<boolean>(false);
+    const [open, setOpen]: UseStatePair<boolean> = useState<boolean>(false);
     const even: boolean = index % 2 === 0;
     const el_index: string = `faq-${index}`;
     const initial_x: number = even ? 128 : -128;
@@ -37,7 +38,7 @@ export default function FAQCard({ q = '', a = '', index }: FAQCardProps): ReactE
             <Button
                 variant={color}
                 className="w-100 p-3 radius0"
-                onClick={() => setOpen(!open)}
+                onClick={(): void => setOpen(!open)}
                 aria-controls={el_index}
                 aria-expanded={open}
             >

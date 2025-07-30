@@ -7,8 +7,9 @@ import GameCardComponent, { type GamePathDataExtra } from '@components/game-card
 import * as CommonIcons from '@config/common-icons';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
-import { handleError } from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import type { CommonChecks } from '@hooks/use-common-checks';
+import useCommonChecks from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { Games } from '@main/config';
 import type { GamePlatformData, GamePlatforms } from '@main/dek/game-map';
@@ -20,7 +21,8 @@ import { useCallback } from 'react';
 
 export default function AboutPage(): ReactElement {
     const applog: AppLogger = useAppLogger('AboutPage');
-    const { t, tA }: UseLocalizationReturn = useLocalization();
+    const { handleError }: CommonChecks = useCommonChecks();
+    const { t, tA }: Localization = useLocalization();
 
     const gamesArray: Games[] = Object.keys(game_map)
         .filter((a: string): boolean => !a.includes('demo'))
@@ -32,8 +34,8 @@ export default function AboutPage(): ReactElement {
 
     const onClickChangelog: VoidFunction = useCallback((): void => {
         if (!window.ipc) return console.error('ipc not loaded');
-        window.ipc.invoke('open-child-window', 'changes').catch((error: unknown) => handleError(error, applog));
-    }, []);
+        window.ipc.invoke('open-child-window', 'changes').catch((error: unknown): void => handleError(error, applog));
+    }, [handleError, applog]);
 
     return (
         <div className="container">
@@ -105,7 +107,7 @@ export default function AboutPage(): ReactElement {
                                     if (!game_map[id]?.platforms?.game) return null;
                                     const platforms: GamePlatforms[] = Object.keys(game_map[id]?.platforms?.game).filter(
                                         (k: keyof GamePlatformData): boolean => k != 'modloader'
-                                    ) as GamePlatforms[];
+                                    );
                                     const initGameData: GamePathDataExtra = {
                                         name: t(`games.${id}.name`)!,
                                         map_data: game_map[id],

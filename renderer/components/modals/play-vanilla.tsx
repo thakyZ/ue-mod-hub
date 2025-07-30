@@ -5,15 +5,16 @@
 */
 
 import DekDiv from '@components/core/dek-div';
+import type { DekCommonAppModalProps } from '@components/core/modal';
 import DekCommonAppModal from '@components/core/modal';
 import useActiveGame from '@hooks/use-active-game';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError } from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import useCommonChecks from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
-import type { Dispatch, MouseEvent, ReactElement, SetStateAction } from 'react';
+import type { Dispatch, MouseEvent, MouseEventHandler, ReactElement, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import Button from 'react-bootstrap/Button';
 
@@ -29,13 +30,13 @@ export default function PlayVanillaModal({
     onRunGameExe,
 }: PlayVanillaModalProps): ReactElement<PlayVanillaModalProps> {
     const applog: AppLogger = useAppLogger('PlayVanillaModal');
-    const { commonAppData }: CommonChecks = useCommonChecks();
-    const onCancel: VoidFunction = useCallback(() => setShow(false), []);
+    const { handleError, commonAppData }: CommonChecks = useCommonChecks();
+    const onCancel: VoidFunction = useCallback((): void => setShow(false), [setShow]);
     const { activeGame } = useActiveGame();
     const game: GameInformation | undefined = activeGame;
-    const { t }: UseLocalizationReturn = useLocalization();
+    const { t }: Localization = useLocalization();
 
-    const onClickPlayVanillaPalworld = useCallback(
+    const onClickPlayVanillaPalworld: MouseEventHandler<HTMLButtonElement> = useCallback(
         (event: MouseEvent<HTMLButtonElement>): void => {
             (async (): Promise<void> => {
                 if (!window.uStore) return console.error('uStore not loaded');
@@ -52,13 +53,13 @@ export default function PlayVanillaModal({
                 // console.log({game_path, result});
                 await onRunGameExe(event);
                 onCancel();
-            })().catch((error: unknown) => handleError(error, applog));
+            })().catch((error: unknown): void => handleError(error, applog));
         },
-        [onRunGameExe, commonAppData]
+        [onRunGameExe, commonAppData, applog, handleError, onCancel]
     );
 
-    const headerText = t('modals.play-vanilla.head', { game });
-    const modalOptions = { show, setShow, onCancel, headerText, showX: true };
+    const headerText: string = t('modals.play-vanilla.head', { game });
+    const modalOptions: DekCommonAppModalProps = { show, setShow, onCancel, headerText, showX: true };
     return (
         <DekCommonAppModal {...modalOptions}>
             <DekDiv type="DekBody" className="d-grid p-3 px-4 text-center">

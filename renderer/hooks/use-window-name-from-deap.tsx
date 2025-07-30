@@ -10,7 +10,7 @@ import useCommonChecks from '@hooks/use-common-checks';
 import type { UseStatePair } from '@typed/common';
 import { useEffect, useState } from 'react';
 
-export default function useWindowNameFromDEAP(): string {
+export default function UseWindowNameFromDEAP(): string {
     const { handleError }: CommonChecks = useCommonChecks();
     const applog: AppLogger = useAppLogger('useWindowNameFromDEAP');
     const [windowName, setWindowName]: UseStatePair<string> = useState<string>('');
@@ -21,7 +21,7 @@ export default function useWindowNameFromDEAP(): string {
             if (!name) return;
             console.log('get-window-name', name);
             setWindowName(name);
-        })().catch((error: unknown) => handleError(error, applog));
+        })().catch((error: unknown): void => handleError(error, applog));
     }, [windowName, handleError, applog]);
     return windowName;
 }

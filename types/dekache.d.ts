@@ -1,4 +1,6 @@
-import { EventEmitter as Emitter } from 'events';
+import { EventEmitter as Emitter } from 'node:events';
+
+import { PromiseTypeFunction } from '@typed/common';
 declare module 'dekache' {
     /**
      * Used within the Dekache class.

@@ -155,6 +155,11 @@ export declare interface DownloadModFileEvent {
     percentage: string;
 }
 
+export declare interface ExtractModFileEvent {
+    entry: string;
+    outputPath: string;
+}
+
 export declare interface InstallModFileEvent {
     install_path: string;
     name: string | undefined;
@@ -234,6 +239,7 @@ export interface EventsToHandleMap extends Record<EventsToHandle, unknown[]> {
     'download-file': [DownloadFileEvent];
     'download-mod-file': [DownloadModFileEvent];
     'install-mod-file': [InstallModFileEvent];
+    'extracr-mod-file': [ExtractModFileEvent];
     'ue4ss-process': Ue4ssProcessTuple;
 }
 

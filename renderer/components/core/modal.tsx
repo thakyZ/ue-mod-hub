@@ -5,7 +5,7 @@
 */
 
 import type { DekDivProps } from '@components/core/dek-div';
-import useScreenSize, { type UseScreenSizeReturn } from '@hooks/use-screen-size';
+import useScreenSize, { type ScreenSize } from '@hooks/use-screen-size';
 import IconX from '@svgs/fa5/regular/window-close.svg';
 import type { TypeFunctionWithArgs } from '@typed/common';
 import type { Dispatch, HTMLAttributes, ReactElement, ReactNode, SetStateAction } from 'react';
@@ -25,12 +25,12 @@ export declare interface DekCommonAppModalProps extends Pick<HTMLAttributes<HTML
 export default function DekCommonAppModal({
     show,
     setShow,
-    onCancel = () => {},
+    onCancel = (): void => {},
     headerText = '',
     showX = true,
     children,
 }: DekCommonAppModalProps): ReactElement<DekCommonAppModalProps> {
-    const { isDesktop }: UseScreenSizeReturn = useScreenSize();
+    const { isDesktop }: ScreenSize = useScreenSize();
     const fullscreen: true | string = isDesktop ? true : '';
     const handleCancel: VoidFunction = (): void => {
         setShow(false);
@@ -51,7 +51,7 @@ export default function DekCommonAppModal({
             && (child.props as { type: string }).type === 'DekBody';
     });
     // prettier-ignore
-    const footChildren: Array<ReactElement<DekDivProps>> = childrenArray.filter<ChildrenArrayIndicie, ReactElement<DekDivProps>>((child: ChildrenArrayIndicie) => {
+    const footChildren: Array<ReactElement<DekDivProps>> = childrenArray.filter<ChildrenArrayIndicie, ReactElement<DekDivProps>>((child: ChildrenArrayIndicie): boolean => {
         return typeof child !== 'boolean'
             && typeof child === 'object'
             && child !== null

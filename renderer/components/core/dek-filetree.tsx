@@ -3,6 +3,7 @@
 # PalHUB::Client by dekitarpg@gmail.com
 ########################################
 */
+import type { TypeFunctionWithArgs } from '@typed/common';
 import type { ReactElement } from 'react';
 import React from 'react';
 import { SphereSpinner } from 'react-spinners-kit';
@@ -29,7 +30,7 @@ export default function DekFileTree({ data }: DekFileTreeProps): ReactElement<De
     }
 
     // prettier-ignore
-    const renderTree = (nodes: FileTreeEntry[]): ReactElement<FileTreeEntry[]> => {
+    const renderTree: TypeFunctionWithArgs<[nodes: FileTreeEntry[]], ReactElement<FileTreeEntry[]>> = (nodes: FileTreeEntry[]): ReactElement<FileTreeEntry[]> => {
         return (
             <ul>
                 {nodes.map((node: FileTreeEntry): ReactElement<FileTreeEntry> => (

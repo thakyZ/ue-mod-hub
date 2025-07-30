@@ -24,7 +24,7 @@ export declare type Time = {
     ms: number;
 };
 
-export default function useTimer(initial: number, interval = SECOND): Time {
+export default function useTimer(initial: number, interval: number = SECOND): Time {
     const [time, setTime]: UseStatePair<Time> = useState<Time>({
         d: 0, // days
         h: 0, // hours
@@ -51,7 +51,7 @@ export default function useTimer(initial: number, interval = SECOND): Time {
     useEffect((): VoidFunction => {
         const handle: NodeJS.Timeout = setInterval(updater, interval);
         return (): void => clearInterval(handle);
-    }, [interval]);
+    }, [interval, updater]);
 
     return time;
 }

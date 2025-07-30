@@ -5,9 +5,9 @@
 */
 import type { CommonChecks } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
-import type { UseScreenSizeReturn } from '@hooks/use-screen-size';
+import type { ScreenSize } from '@hooks/use-screen-size';
 import useScreenSize from '@hooks/use-screen-size';
 import type { VoidFunctionWithArgs } from '@typed/common';
 import type { IModInfoWithSavedConfig } from '@typed/palhub';
@@ -33,8 +33,8 @@ export default function ModTable({
     showStatus = false,
 }: ModTableProps): ReactElement<ModTableProps> {
     const { commonAppData }: CommonChecks = useCommonChecks();
-    const { t /* tA */ }: UseLocalizationReturn = useLocalization();
-    const { isDesktop }: UseScreenSizeReturn = useScreenSize();
+    const { t /* tA */ }: Localization = useLocalization();
+    const { isDesktop }: ScreenSize = useScreenSize();
     const fullscreen: boolean = !isDesktop;
 
     const openModInBrowser: VoidFunctionWithArgs<[mod_id: number | string | undefined]> = useCallback(
@@ -64,10 +64,8 @@ export default function ModTable({
                 style={fullscreen ? { height: 'calc(100vh - 207px)' } : { height: 'calc(100vh / 4 * 2)' }}
             >
                 {mods
-                    .filter<ModTablePropsModType | null, NonNullable<ModTablePropsModType>>(
-                        (mod: ModTablePropsModType | null): boolean => !!mod
-                    )
-                    .map<ReactElement>(
+                    .filter((mod: ModTablePropsModType | null): boolean => !!mod)
+                    .map(
                         (mod: ModTablePropsModType): ReactElement => (
                             <tr
                                 key={mod.mod_id}

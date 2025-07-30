@@ -14,6 +14,7 @@ export default function SomePageOrComponent(){
 }
 */
 
+import type { TypeFunction } from '@typed/common';
 import useSWR, { useSWRConfig as config } from 'swr';
 import type {
     Arguments,
@@ -27,7 +28,7 @@ import type {
     SWRResponse,
 } from 'swr/dist/_internal';
 
-export const useSWRConfig = config;
+export const useSWRConfig: TypeFunction<FullConfiguration> = config;
 
 export const mutate = async <TData = unknown, TMutationData = TData>(
     routekey: (key?: Arguments) => boolean
@@ -81,8 +82,12 @@ export default function useSwrJSON<
 ): UseSwrJsonReturn<TData, TError, TOutput, SWROptions> {
     // prettier-ignore
     const thisfetcher: BareFetcher<TOutput> = (): FetcherResponse<TOutput> => fetcher<TData, TError, TOutput>(url as string, fetchoptions)
-    const newLocal = useSWR<TOutput, TError, SWROptions>(url, thisfetcher, options as SWROptions);
+    const newLocal: SWRResponse<TOutput, TError, SWROptions> = useSWR<TOutput, TError, SWROptions>(
+        url,
+        thisfetcher,
+        options as SWROptions
+    );
     const { data, error, mutate, isValidating }: SWRResponse<TOutput, TError, SWROptions> = newLocal;
-    const loading = !data && !error && !isValidating;
+    const loading: boolean = !data && !error && !isValidating;
     return { data, error, loading, mutate };
 }

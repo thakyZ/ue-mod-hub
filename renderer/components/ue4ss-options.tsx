@@ -8,8 +8,8 @@ import { ensureEntryValueType, ENVEntry, ENVEntryLabel } from '@components/modal
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError } from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import useCommonChecks from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { Locale as Ue4ssLocale } from '@locales/*-ue4ss.json';
 import type { Ue4ssSettings } from '@main/dek/game-map';
@@ -64,14 +64,18 @@ export declare interface Ue4ssConfiguratorProps {
     game: GameInformation | null;
 }
 
+type UpdaterFunctionType = VoidFunctionWithArgs<
+    [name_inner: keyof ValueOf<ValueOf<Ue4ssSettings>>, value: ValueOf<ValueOf<Ue4ssSettings>>]
+>;
+
 export default function Ue4ssConfigurator({ game }: Ue4ssConfiguratorProps): ReactElement<Ue4ssConfiguratorProps> {
     const applog: AppLogger = useAppLogger('Ue4ssConfigurator');
-    const { requiredModulesLoaded }: CommonChecks = useCommonChecks();
+    const { handleError, requiredModulesLoaded }: CommonChecks = useCommonChecks();
     const [showAdvanced, setShowAdvanced]: UseStatePair<boolean> = useState<boolean>(false);
     const [hasChanges, setHasChanges]: UseStatePair<boolean> = useState<boolean>(false);
     const [settings, setSettings]: UseStatePair<Ue4ssSettings | null> = useState<Ue4ssSettings | null>(null);
     const [rawINI, setRawINI]: UseStatePair<string> = useState<string>('');
-    const { t, tA }: UseLocalizationReturn<Ue4ssLocale> = useLocalization('ue4ss');
+    const { t, tA }: Localization<Ue4ssLocale> = useLocalization('ue4ss');
 
     type UpdateSettingType = VoidFunctionWithArgs<[key: string, value: TypeFunctionWithArgs<[data: Ue4ssSettings | null], string | boolean | number> | string | boolean | number]>; // eslint-disable-line prettier/prettier
     // function to call for updating individual setting
@@ -130,7 +134,7 @@ export default function Ue4ssConfigurator({ game }: Ue4ssConfiguratorProps): Rea
                 setHasChanges(false);
             })().catch((error: unknown): void => handleError(error, applog));
         },
-        [requiredModulesLoaded, game, settings, rawINI]
+        [requiredModulesLoaded, game, settings, rawINI, handleError, applog]
     );
 
     useEffect((): void => {
@@ -147,11 +151,11 @@ export default function Ue4ssConfigurator({ game }: Ue4ssConfiguratorProps): Rea
                 console.error('Invalid path for UE4SS settings:', ini_path);
                 return;
             }
-            const ini_string = await window.palhub('readFile', ini_path, { encoding: 'utf8' });
+            const ini_string: string | Buffer = await window.palhub('readFile', ini_path, { encoding: 'utf8' });
             setSettings(parse(ini_string as string) as Ue4ssSettings);
             setRawINI(ini_string as string);
-        })().catch((error: unknown) => handleError(error, applog));
-    }, [requiredModulesLoaded, game]);
+        })().catch((error: unknown): void => handleError(error, applog));
+    }, [requiredModulesLoaded, game, handleError, applog]);
 
     // if (settings) console.log(settings);
 
@@ -170,8 +174,8 @@ export default function Ue4ssConfigurator({ game }: Ue4ssConfiguratorProps): Rea
                 choices={tA('modal.console-choices', 3)}
                 active={settings?.Debug?.ConsoleEnabled === '1' ? 1 : settings?.Debug?.GuiConsoleEnabled === '1' ? 2 : 0}
                 onClick={(_i: number, value: string | number): void => {
-                    const isGui = value === 'GUI';
-                    const isConsole = value === 'Console';
+                    const isGui: boolean = value === 'GUI';
+                    const isConsole: boolean = value === 'Console';
                     updateSetting('Debug.ConsoleEnabled', isConsole ? '1' : '0');
                     updateSetting('Debug.GuiConsoleEnabled', isGui ? '1' : '0');
                     updateSetting('Debug.GuiConsoleVisible', isGui ? '1' : '0');
@@ -219,10 +223,10 @@ export default function Ue4ssConfigurator({ game }: Ue4ssConfiguratorProps): Rea
                                     const type: ValueType = UE4SS_NUMBOOLS.has(name as string)
                                         ? 'numbool'
                                         : ensureEntryValueType(value);
-                                    const updater = (
+                                    const updater: UpdaterFunctionType = (
                                         name_inner: keyof ValueOf<ValueOf<Ue4ssSettings>>,
                                         value: ValueOf<ValueOf<Ue4ssSettings>>
-                                    ) =>
+                                    ): void =>
                                         updateSetting(`${key}.${name_inner as string}`, (): number | boolean | string => {
                                             return type === 'numbool'
                                                 ? value

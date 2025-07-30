@@ -10,7 +10,7 @@ import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
 // import type { UseLocalizationReturn } from '@hooks/use-localization';
 // import useLocalization from '@hooks/use-localization';
-import type { UseScreenSizeReturn } from '@hooks/use-screen-size';
+import type { ScreenSize } from '@hooks/use-screen-size';
 import useScreenSize from '@hooks/use-screen-size';
 import type { Ue4ssSettingsFlat } from '@main/dek/game-map';
 import type { PromiseVoidFunction, UseStatePair, VoidFunctionWithArgs } from '@typed/common';
@@ -34,7 +34,7 @@ export default function UE4SSInstallProgress({
     const { requiredModulesLoaded, handleError }: CommonChecks = useCommonChecks();
     // const { t, tA }: UseLocalizationReturn = useLocalization();
 
-    const { isDesktop }: UseScreenSizeReturn = useScreenSize();
+    const { isDesktop }: ScreenSize = useScreenSize();
     const fullscreen: boolean = !isDesktop;
 
     // const height: string = fullscreen ? 'calc(100vh - 182px)' : '352px';
@@ -112,14 +112,21 @@ export default function UE4SSInstallProgress({
             } catch (error: unknown) {
                 console.error(error);
             }
-        })(game, onFinished).catch((error: unknown) => handleError(error, applog));
+        })(game, onFinished).catch((error: unknown): void => handleError(error, applog));
     }, [addLogMessage, applog, game, handleError, onFinished, requiredModulesLoaded]);
 
     useEffect((): void | VoidFunction => {
         if (!requiredModulesLoaded) return;
 
         type ProcessDataType = 'download' | 'extract' | 'delete' | 'error' | 'complete' | 'uninstalled';
-        const processData = (_event: RendererIpcEvent, type: ProcessDataType, data: DownloadFileEvent | string) => {
+        type ProcessDataFunc = VoidFunctionWithArgs<
+            [event: RendererIpcEvent, type: ProcessDataType, data: DownloadFileEvent | string]
+        >;
+        const processData: ProcessDataFunc = (
+            _event: RendererIpcEvent,
+            type: ProcessDataType,
+            data: DownloadFileEvent | string
+        ): void => {
             switch (type) {
                 case 'download': {
                     addLogMessage(

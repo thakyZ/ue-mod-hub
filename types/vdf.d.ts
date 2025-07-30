@@ -1,12 +1,18 @@
 declare module '@typed/vdf' {
     /** cSpell:words dlcappid, optionaldlc, schinese */
 
-    /** Type for the {@link LibraryFoldersVdf.libraryfolders} property */
+    /**
+     * Type for the {@link LibraryFoldersVdf.libraryfolders} property
+     */
     export declare type LibraryFolders = Record<`${number}`, LibraryFolderVdf>;
 
-    /** Type for the {@link LibraryFoldersVdf.libraryfolders} property's values. */
+    /**
+     * Type for the {@link LibraryFoldersVdf.libraryfolders} property's values.
+     */
     export declare interface LibraryFolderVdf {
-        /** Specifies the path to the Steam library folder. */
+        /**
+         * Specifies the path to the Steam library folder.
+         */
         path: string;
 
         /**
@@ -15,9 +21,15 @@ declare module '@typed/vdf' {
          * @default ''
          */
         label: string;
-        /** Specifies the unique id of the Steam library folder. */
+
+        /**
+         * Specifies the unique id of the Steam library folder.
+         */
         contentid: `${number}`;
-        /** Specifies the total size of the drive that the Steam library folder is on. */
+
+        /**
+         * Specifies the total size of the drive that the Steam library folder is on.
+         */
         totalsize: `${number}`;
 
         /**
@@ -25,9 +37,15 @@ declare module '@typed/vdf' {
          * @remarks Unsure if this is the actual use of this property.
          */
         update_clean_bytes_tally: `${number}`;
-        /** Specifies the last time the Steam library folder was verified as an unix timestamp in seconds. */
+
+        /**
+         * Specifies the last time the Steam library folder was verified as an unix timestamp in seconds.
+         */
         time_last_update_verified?: `${number}`;
-        /** Specifies the last time the Steam library folder was corrupted as an unix timestamp in seconds. */
+
+        /**
+         * Specifies the last time the Steam library folder was corrupted as an unix timestamp in seconds.
+         */
         time_last_update_corruption?: `${number}`;
 
         /**
@@ -44,11 +62,15 @@ declare module '@typed/vdf' {
      *       I only went off what was on GitHub
      */
     export declare interface LibraryFoldersVdf {
-        /** A record of index and {@link LibraryFolderVdf} of the Steam library folders config. */
+        /**
+         * A record of index and {@link LibraryFolderVdf} of the Steam library folders config.
+         */
         libraryfolders: LibraryFolders;
     }
 
-    /** A constant array to simplify making the {@link Language} type */
+    /**
+     * A constant array to simplify making the {@link Language} type.
+     */
     export declare const LANGUAGE = ['english', 'schinese', 'german', 'russian'] as const;
 
     /**
@@ -63,13 +85,23 @@ declare module '@typed/vdf' {
      */
     export declare type Platforms = 'linux' | 'mac' | 'windows' | '';
 
-    /** Type for the {@link AppStateVdf.UserConfig} and {@link AppStateVdf.MountedConfig} property */
+    /**
+     * Type for the {@link AppStateVdf.UserConfig} and {@link AppStateVdf.MountedConfig} property
+     */
     export declare interface AppStateConfig {
-        /** An optional property that specifies the name of the mod for this Steam app. */
+        /**
+         * An optional property that specifies the name of the mod for this Steam app.
+         */
         mod?: string;
-        /** An optional property that specifies the installed language for this Steam app. */
+
+        /**
+         * An optional property that specifies the installed language for this Steam app.
+         */
         language?: Language;
-        /** An optional property that specifies the beta key that was supplied by the user for the Steam app. */
+
+        /**
+         * An optional property that specifies the beta key that was supplied by the user for the Steam app.
+         */
         betakey?: string;
 
         /**
@@ -87,9 +119,15 @@ declare module '@typed/vdf' {
          * Since it is impossible to make a recursive reference type in TypeScript we'll just use a `string` type.
          */
         DisabledDLC?: string;
-        /** An optional property that specifies the destination platform to override to. */
+
+        /**
+         * An optional property that specifies the destination platform to override to.
+         */
         platform_override_dest?: Platforms;
-        /** An optional property that specifies the source platform to override from. */
+
+        /**
+         * An optional property that specifies the source platform to override from.
+         */
         platform_override_source?: Platforms;
     }
 
@@ -142,22 +180,38 @@ declare module '@typed/vdf' {
      */
     export declare type ScheduledAutoUpdate = '0' | '1';
 
-    /** Type for the {@link AppStateAcf.InstalledDepots} property. */
+    /**
+     * Type for the {@link AppStateAcf.InstalledDepots} property.
+     */
     export declare interface InstalledDepot {
-        /** Specifies the manifest id of the depot. */
+        /**
+         * Specifies the manifest id of the depot.
+         */
         manifest: `${number}`;
-        /** Specifies a number of the depot size in bytes. */
+
+        /**
+         * Specifies a number of the depot size in bytes.
+         */
         size?: `${number}`;
-        /** An optional value that specifies a number of the DLC app identification number. */
+
+        /**
+         * An optional value that specifies a number of the DLC app identification number.
+         */
         dlcappid?: `${number}`;
     }
 
-    /** Type for the {@link AppManifestAcf.AppState} property. */
+    /**
+     * Type for the {@link AppManifestAcf.AppState} property.
+     */
     export declare interface AppStateAcf {
-        /** Specifies the Steam app identification number */
+        /**
+         * Specifies the Steam app identification number
+         */
         appid: `${number}`;
 
-        /** Specifies the universe the Steam app is from. */
+        /**
+         * Specifies the universe the Steam app is from.
+         */
         universe: Universe;
 
         /**
@@ -165,7 +219,10 @@ declare module '@typed/vdf' {
          * @remarks Seems to be always "C:\\Program Files (x86)\\Steam\\steam.exe" or where ever steam is installed.
          */
         LauncherPath: string;
-        /** Specifies the display name of the Steam app. */
+
+        /**
+         * Specifies the display name of the Steam app.
+         */
         name: string;
 
         /**
@@ -173,31 +230,70 @@ declare module '@typed/vdf' {
          * @remarks More than likely a flag enum. Values unknown, commonly "4".
          */
         StateFlags: `${number}`;
-        /** Specifies the installed directory name in the `SteamApps/common` directory. */
+
+        /**
+         * Specifies the installed directory name in the `SteamApps/common` directory.
+         */
         installdir: string;
-        /** Specifies the last updated time of the Steam app as an Unix timestamp in seconds. */
+
+        /**
+         * Specifies the last updated time of the Steam app as an Unix timestamp in seconds.
+         */
         LastUpdated: `${number}`;
-        /** Specifies the last played time of the Steam app as an Unix timestamp in seconds. */
+
+        /**
+         * Specifies the last played time of the Steam app as an Unix timestamp in seconds.
+         */
         LastPlayed: `${number}`;
-        /** Specifies a number representing the Steam app size in bytes. */
+
+        /**
+         * Specifies a number representing the Steam app size in bytes.
+         */
         SizeOnDisk: `${number}`;
-        /** Specifies a number representing the Steam app staging size in bytes. */
+
+        /**
+         * Specifies a number representing the Steam app staging size in bytes.
+         */
         StagingSize: `${number}`;
-        /** Specifies a number representing the Steam db build id. */
+
+        /**
+         * Specifies a number representing the Steam db build id.
+         */
         buildid: `${number}`;
-        /** Specifies a number representing the Steam user id of the last owner. */
+
+        /**
+         * Specifies a number representing the Steam user id of the last owner.
+         */
         LastOwner: `${number}`;
-        /** Specifies the download type of the Steam app. */
+
+        /**
+         * Specifies the download type of the Steam app.
+         */
         DownloadType: DownloadType;
-        /** Specifies the update result of the Steam app. */
+
+        /**
+         * Specifies the update result of the Steam app.
+         */
         UpdateResult: UpdateResult;
-        /** Specifies a number representing the size of the Steam app left to download in bytes. */
+
+        /**
+         * Specifies a number representing the size of the Steam app left to download in bytes.
+         */
         BytesToDownload: `${number}`;
-        /** Specifies a number representing the size of the Steam app that has been downloaded in bytes. */
+
+        /**
+         * Specifies a number representing the size of the Steam app that has been downloaded in bytes.
+         */
         BytesDownloaded: `${number}`;
-        /** Specifies a number representing the size of the Steam app that needs to be staged in bytes. */
+
+        /**
+         * Specifies a number representing the size of the Steam app that needs to be staged in bytes.
+         */
         BytesToStage: `${number}`;
-        /** Specifies a number representing the size of the Steam app that has been staged in bytes. */
+
+        /**
+         * Specifies a number representing the size of the Steam app that has been staged in bytes.
+         */
         BytesStaged: `${number}`;
 
         /**
@@ -205,21 +301,45 @@ declare module '@typed/vdf' {
          * @see {@link AppStateAcf.buildid}
          */
         TargetBuildID: `${number}`;
-        /** Specifies the auto update behavior of the Steam app. */
+
+        /**
+         * Specifies the auto update behavior of the Steam app.
+         */
         AutoUpdateBehavior: AutoUpdateBehavior;
-        /** Specifies the option to allow other downloads while running the Steam app. */
+
+        /**
+         * Specifies the option to allow other downloads while running the Steam app.
+         */
         AllowOtherDownloadsWhileRunning: AllowOtherDownloadsWhileRunning;
-        /** Specifies if the application has a scheduled auto update. */
+
+        /**
+         * Specifies if the application has a scheduled auto update.
+         */
         ScheduledAutoUpdate: ScheduledAutoUpdate;
-        /** An optional property that specifies a record of installed Steam db depots. */
+
+        /**
+         * An optional property that specifies a record of installed Steam db depots.
+         */
         InstalledDepots?: { [key: `${number}`]: InstalledDepot };
-        /** An optional property that specifies a record of shared Steam db depots by identification number. */
+
+        /**
+         * An optional property that specifies a record of shared Steam db depots by identification number.
+         */
         SharedDepots?: { [key: `${number}`]: `${number}` };
-        /** An optional property that specifies a record of mounter Steam db depots by identification number. */
+
+        /**
+         * An optional property that specifies a record of mounter Steam db depots by identification number.
+         */
         MountedDepots?: { [key: `${number}`]: `${number}` };
-        /** An optional property that specifies the user configuration of the Steam app. */
+
+        /**
+         * An optional property that specifies the user configuration of the Steam app.
+         */
         UserConfig?: AppStateConfig;
-        /** An optional property that specifies the mounted configuration of the Steam app. */
+
+        /**
+         * An optional property that specifies the mounted configuration of the Steam app.
+         */
         MountedConfig?: AppStateConfig;
 
         /**
@@ -237,19 +357,30 @@ declare module '@typed/vdf' {
      *       I only went off what was on GitHub
      */
     export declare interface AppManifestAcf {
-        /** The inital key of the app manifest file. */
+        /**
+         * The inital key of the app manifest file.
+         */
         AppState: AppStateAcf;
     }
 
-    /** Type wrapping of all Steam vdf/acf types */
+    /**
+     * Type wrapping of all Steam vdf/acf types.
+     */
     export declare type SteamVdfTypes = LibraryFoldersVdf | AppManifestAcf;
 }
 
 declare module '@node-steam/vdf' {
-    /** Parses a VDF string and returns an object. */
+    import type { SteamVdfTypes } from '@typed/vdf';
+
+    /**
+     * Parses a VDF string and returns an object.
+     */
     // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-explicit-any
     export function parse<T extends SteamVdfTypes | any = any>(string: string): T;
-    /** Dumps an object to a VDF string. */
+
+    /**
+     * Dumps an object to a VDF string.
+     */
     // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-explicit-any
     export function dump<T extends SteamVdfTypes | any = any>(obj: T): string;
 }

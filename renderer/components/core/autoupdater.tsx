@@ -19,7 +19,7 @@ export declare interface AutoUpdaterProps {
 export default function AutoUpdater({ _: __ }: AutoUpdaterProps): ReactElement<AutoUpdaterProps> {
     const router = useRouter();
     const { t } = useLocalization();
-    const active_route = router.pathname;
+    const active_route: string = router.pathname;
     const [updateMessage, setUpdateMessage] = useState<null | string>();
     const [canInstallUpdate, setCanInstallUpdate] = useState(false);
 
@@ -28,12 +28,12 @@ export default function AutoUpdater({ _: __ }: AutoUpdaterProps): ReactElement<A
         void window.ipc.invoke('install-update');
     };
 
-    useEffect(() => {
+    useEffect((): void | VoidFunction => {
         if (!window.ipc) return console.error('ipc not loaded');
 
-        const remove_auto_update_handler = window.ipc.on(
+        const remove_auto_update_handler: VoidFunction = window.ipc.on(
             'auto-updater',
-            (_event: RendererIpcEvent, type: AutoUpdaterEventType, data: unknown[] | DownloadProgressType) => {
+            (_event: RendererIpcEvent, type: AutoUpdaterEventType, data: unknown[] | DownloadProgressType): void => {
                 console.log('auto-update', { type, data });
                 switch (type) {
                     case 'checking-for-update':
@@ -44,7 +44,7 @@ export default function AutoUpdater({ _: __ }: AutoUpdaterProps): ReactElement<A
                         break;
                     case 'update-not-available':
                         setUpdateMessage(t('#updater.current'));
-                        setTimeout(() => setUpdateMessage(null), 3000);
+                        setTimeout((): void => setUpdateMessage(null), 3000);
                         break;
                     case 'update-downloaded':
                         setUpdateMessage(null);
@@ -85,10 +85,10 @@ export default function AutoUpdater({ _: __ }: AutoUpdaterProps): ReactElement<A
         // setUpdateMessage(null);
         // setCanInstallUpdate(false);
 
-        return () => remove_auto_update_handler();
+        return (): void => remove_auto_update_handler();
     }, [active_route, t]);
 
-    const showUpdateMessage = updateMessage || canInstallUpdate;
+    const showUpdateMessage: boolean = !!updateMessage || canInstallUpdate;
 
     return (
         <Fragment>

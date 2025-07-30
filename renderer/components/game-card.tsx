@@ -12,7 +12,7 @@ import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks, GameInformation } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { GamePathData, GamePlatforms, LaunchTypes } from '@main/dek/game-map';
 import type { ValidateGamePathReturnType } from '@main/dek/palhub-types';
@@ -46,7 +46,7 @@ export declare interface GameCardComponentProps {
 export default function GameCardComponent({
     id,
     path,
-    onClick = () => {},
+    onClick = (): void => {},
     tempGame = null,
     small = false,
     platforms = null,
@@ -63,7 +63,7 @@ export default function GameCardComponent({
         initGameData
     );
     // const IconComponent: CommonIcon = CommonIcons.star;
-    const { t /* tA */ }: UseLocalizationReturn = useLocalization();
+    const { t /* tA */ }: Localization = useLocalization();
 
     const realOnClick: MouseEventHandler<HTMLElement> = useCallback(
         (event: MouseEvent<HTMLElement>): void => {
@@ -96,7 +96,7 @@ export default function GameCardComponent({
                 console.error(error);
             }
         })().catch((error: unknown): void => handleError(error, applog));
-    }, [requiredModulesLoaded, path, tempGame?.id, tempGame?.has_ue4ss, handleError, id, t, applog]);
+    }, [applog, id, tempGame?.id, handleError, tempGame?.has_ue4ss, path, requiredModulesLoaded, t]);
 
     // console.log({id, game, ta: tA(`/games.${id}.info`)})
 
@@ -122,11 +122,13 @@ export default function GameCardComponent({
                             />
                         </div>
                         <div className="modcard set-topleft p-1 bg-info">
-                            {platforms && (
+                            {!!platforms && (
                                 <div className="d-flex gap-1">
-                                    {platforms.map((platform, idx) => (
-                                        <PlatformIcon key={idx} type={platform} />
-                                    ))}
+                                    {platforms.map<GamePlatforms, ReactElement<PlatformIconProps>>(
+                                        (platform: GamePlatforms, idx: number): ReactElement<PlatformIconProps> => (
+                                            <PlatformIcon key={idx} type={platform} />
+                                        )
+                                    )}
                                 </div>
                             )}
                             {gameData?.type && <PlatformIcon type={gameData?.type} />}

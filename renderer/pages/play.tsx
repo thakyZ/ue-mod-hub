@@ -69,7 +69,7 @@ export default function PlayPage() {
         } else {
             await window.palhub('launchExe', game_data.exe_path, []); //, {env: {SteamAppId: game_data.map_data.platforms.game.steam.id, SteamGameId: game_data.map_data.platforms.game.steam.id}});
         }
-    }, [requiredModulesLoaded, game_data]);
+    }, [requiredModulesLoaded, game_data, applog]);
 
     const onClickLaunchGame: VoidFunction = useCallback((): void => {
         if (!requiredModulesLoaded) return;

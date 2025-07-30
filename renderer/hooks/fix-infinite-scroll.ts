@@ -14,7 +14,7 @@ export declare interface UseFixMissingScrollProps {
 }
 
 function useFixMissingScroll({ hasMoreItems, fetchMoreItems, query = 'main-body' }: UseFixMissingScrollProps): void {
-    const mainElement: Element | null = useMemo((): Element | null => document?.querySelector(query), []);
+    const mainElement: Element | null = useMemo((): Element | null => document?.querySelector(query), [query]);
     /** @returns {void} */
     const fetchCb: VoidFunction = useCallback((): void => {
         fetchMoreItems();

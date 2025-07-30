@@ -26,11 +26,11 @@ import type { ArchiveEntry, ArchiveEntryData } from '@main/dek/archive-handler';
 import ArchiveHandler from '@main/dek/archive-handler';
 import DEAP from '@main/dek/deap';
 import type { GameMap, GamePlatform, GamePlatforms, KnownModLoader, LaunchTypes } from '@main/dek/game-map';
-import GAME_MAP, { KNOWN_MODLOADERS } from '@main/dek/game-map'; // eslint-disable-line import/named
+import GAME_MAP, { KNOWN_MODLOADERS } from '@main/dek/game-map';
 import Utils from '@main/dek/utils';
 import type { IFileInfo as NexusIFileInfo, IModInfo as NexusIModInfo } from '@nexusmods/nexus-api';
 import Nexus from '@nexusmods/nexus-api';
-import type { BooleanChoose, PromiseReject, PromiseResolve } from '@typed/common';
+import type { BooleanChoose, BufferEncoding, PromiseReject, PromiseResolve } from '@typed/common';
 import type {
     AddModDataToJsonExtraProps,
     ChangeDataEvent,
@@ -717,12 +717,9 @@ export class Client {
         const folderList: string[] = [...folders]; //.sort();
         console.log('Detected folders:', folderList);
 
-        /** @returns {ArchiveEntry | undefined} */
         const getFirstFileEntry = (): ArchiveEntry | undefined =>
-            entries.find((entry) => {
-                /** @type {string} */
+            entries.find<ArchiveEntry, ArchiveEntry>((entry: ArchiveEntry): boolean => {
                 const replaced: string = entry.entryName.replace(ignoredRoots, '');
-                /** @type {string | undefined} */
                 const root: string | undefined = replaced.split(/[\\/]/).shift();
                 console.log('checking root:', root);
                 assert.ok(root);
@@ -732,7 +729,6 @@ export class Client {
                 return false;
             }) ?? entries[0];
 
-        /** @type {ArchiveEntry | undefined} */
         let firstFileEntry: ArchiveEntry | undefined = getFirstFileEntry();
 
         if (ignoredRoots === 'Scripts/') {
@@ -752,20 +748,17 @@ export class Client {
         }
 
         // if the entry is a file and not in the allowed roots, ignore it
-        /** @type {(part: string) => boolean} */
         const part_checker: (part: string) => boolean = (part): boolean => allowedRoots.has(part);
-        /** @type {string[]} */
         const VALID_FILETYPES: string[] = ['pak', 'ucas', 'utoc', 'txt', 'json', 'lua', 'md', 'bk2', 'bmp'];
-        /** @type {string[]} */
         const ignored_files: string[] = entries
-            .filter(({ isDirectory = false, entryName: entryName = '', size = 0 }) => {
+            .filter<ArchiveEntry, ArchiveEntry>(({ isDirectory = false, entryName: entryName = '', size = 0 }) => {
                 /** @type {boolean} */
                 const seemsValid: boolean = VALID_FILETYPES.some((ext) => entryName.endsWith(`.${ext}`));
                 if (!isDirectory && seemsValid) return false;
                 if (!isDirectory && size === 0) return true;
                 return !isDirectory && !entryName.split('/').some((element: string): boolean => part_checker(element));
             })
-            .map(({ entryName: entryName }) => entryName);
+            .map(({ entryName }: ArchiveEntry): string => entryName);
 
         console.log({ firstFileEntry, ignoredRoots, ignored_files, game_data });
 
@@ -1424,7 +1417,7 @@ export class Client {
             file_name: file.file_name,
             entries: entries
                 .filter((entry: ArchiveEntry): boolean => filter(entry))
-                .map((entry: ArchiveEntry): string => mapper(entry)),
+                .map<ArchiveEntry, string>((entry: ArchiveEntry): string => mapper(entry)),
             ...extraProps,
         } as unknown as TOutput;
         return await Client.writeJSON(game_path, config);

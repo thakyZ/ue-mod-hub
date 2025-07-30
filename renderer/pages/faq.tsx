@@ -6,7 +6,7 @@
 import BrandHeader from '@components/core/brand-header';
 import type { FAQCardProps } from '@components/faq-card';
 import FAQCard from '@components/faq-card';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 // import type { PromiseTypeFunction, WrappedProps } from '@typed/common';
 import { ReactElement } from 'react';
@@ -26,7 +26,7 @@ export declare interface FAQPageProps {
 export declare type FAQPair = { q: string; a: string };
 
 export default function FAQPage(_props: FAQPageProps): ReactElement<FAQPageProps> {
-    const { t, /* tA, */ tO }: UseLocalizationReturn = useLocalization();
+    const { t, /* tA, */ tO }: Localization = useLocalization();
     const tagline: string = t('/faq.head');
     const rawFAQs: FAQPair[] = tO('/faq.faqs') ?? [];
     const answers: string[] = rawFAQs.map((_v: FAQPair, i: number): string => t(`/faq.faqs.${i}.a` as `/faq.faqs.0.a`)!);

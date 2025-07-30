@@ -1,3 +1,4 @@
+import type { DekItemProps } from '@components/core/dek-item';
 import DekItem from '@components/core/dek-item';
 import DekSelect from '@components/core/dek-select';
 import { PlatformIcon } from '@components/game-card';
@@ -8,7 +9,7 @@ import useAppLogger from '@hooks/use-app-logger';
 import type { GameInformation } from '@hooks/use-common-checks';
 import type { CommonChecks } from '@hooks/use-common-checks';
 import useCommonChecks from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { Dispatch, HTMLAttributes, MouseEvent, ReactElement, ReactNode, SetStateAction } from 'react';
 import { useCallback, useEffect } from 'react';
@@ -53,21 +54,29 @@ export default function ActiveGameSelector({
         }
     }, [selectedGameID, gamesArray, updateSelectedGame, handleError, applog]);
 
-    const { t }: UseLocalizationReturn = useLocalization();
+    const { t }: Localization = useLocalization();
     const iconOptions = { height: '1.8rem', style: { marginTop: -4 } };
     return (
         <div className={className}>
             <DekSelect active_id={selectedGameID} onChange={onChangeSelectedGame}>
-                {gamesArray.map(({ id, type, launch_type, path: _path, active: _active }) => {
-                    return (
-                        <DekItem key={`selector-${id}-${type}-${launch_type}`} text="hi">
-                            <PlatformIcon type={type} options={iconOptions} />
-                            {`${t(`games.${id}.name` as `games.generic.name`)} `}
-                            {launch_type !== 'game' && t(`common.app-types.${launch_type}`)}
-                            {/* {` - ${path}`} */}
-                        </DekItem>
-                    );
-                })}
+                {gamesArray.map(
+                    ({
+                        id,
+                        type,
+                        launch_type,
+                        path: _path,
+                        active: _active,
+                    }: GameInformation): ReactElement<DekItemProps> => {
+                        return (
+                            <DekItem key={`selector-${id}-${type}-${launch_type}`} text="hi">
+                                <PlatformIcon type={type} options={iconOptions} />
+                                {`${t(`games.${id}.name` as `games.generic.name`)} `}
+                                {launch_type !== 'game' && t(`common.app-types.${launch_type}`)}
+                                {/* {` - ${path}`} */}
+                            </DekItem>
+                        );
+                    }
+                )}
             </DekSelect>
         </div>
     );

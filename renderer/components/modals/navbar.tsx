@@ -14,8 +14,8 @@ import navbar_items from '@config/navbar-items';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError } from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import useCommonChecks from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import game_map from '@main/dek/game-map';
 import { motion } from 'framer-motion';
@@ -32,10 +32,10 @@ export declare interface NavbarModalProps {
 
 export default function NavbarModal({ show, setShow }: NavbarModalProps): ReactElement {
     const applog: AppLogger = useAppLogger('NavbarModal');
-    const onCancel: VoidFunction = useCallback(() => setShow(false), []);
-    const { commonAppData }: CommonChecks = useCommonChecks();
+    const onCancel: VoidFunction = useCallback(() => setShow(false), [setShow]);
+    const { handleError, commonAppData }: CommonChecks = useCommonChecks();
 
-    const { t }: UseLocalizationReturn = useLocalization();
+    const { t }: Localization = useLocalization();
     const router: NextRouter = useRouter();
     // const active_route: string = router.pathname;
     const headerText: string = t('app.brandname');

@@ -56,7 +56,7 @@ const config: ConfigArray = ts.config([
     // compat.extends('plugin:typescript-paths/recommended'),
     {
         name: 'ignores_and_files',
-        ignores: ['**/*.json', 'node_modules', '.next'],
+        ignores: ['**/*.json', 'node_modules', '**/.next'],
         files: ['**/*.{ts,tsx,mjs,js}'],
     },
     {
@@ -109,7 +109,6 @@ const config: ConfigArray = ts.config([
         },
         rules: {
             'prettier/prettier': 'error',
-            'react-compiler/react-compiler': 'error',
             '@next/next/no-html-link-for-pages': ['error', 'renderer/pages/'],
             'no-unused-vars': 'off',
             '@typescript-eslint/no-unused-vars': [
@@ -145,11 +144,23 @@ const config: ConfigArray = ts.config([
         },
     },
     {
+        name: 'non_react_settings',
+        ignores: ['renderer'],
+        rules: {
+            'react-compiler/react-compiler': 'off',
+            'react-hooks/rules-of-hooks': 'off',
+        },
+    },
+    {
         name: 'react_settings',
+        files: ['renderer'],
         settings: {
             react: {
                 version: 'detect',
             },
+        },
+        rules: {
+            'react-compiler/react-compiler': 'error',
         },
     },
     {

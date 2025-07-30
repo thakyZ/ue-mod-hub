@@ -10,7 +10,9 @@ import DekChoice from '@components/core/dek-choice';
 import DekDiv from '@components/core/dek-div';
 // import DekSelect from '@components/core/dek-select';
 // import DekSwitch from '@components/core/dek-switch';
+import type { ModFileCardProps } from '@components/core/mod-file-card';
 import ModFileCard from '@components/core/mod-file-card';
+import type { DekCommonAppModalProps } from '@components/core/modal';
 import DekCommonAppModal from '@components/core/modal';
 import MarkdownRenderer from '@components/markdown/renderer';
 import { ensureEntryValueType } from '@components/modals/common';
@@ -19,26 +21,33 @@ import type { ServerListing } from '@components/server-card';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError, parseIntSafe } from '@hooks/use-common-checks';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import useCommonChecks, { parseIntSafe } from '@hooks/use-common-checks';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
-import type { UseScreenSizeReturn } from '@hooks/use-screen-size';
+import type { ScreenSize } from '@hooks/use-screen-size';
 import useScreenSize from '@hooks/use-screen-size';
-import type { IModInfoWithSavedConfig, InstallModFileEvent, ValidateGamePathReturnType } from '@main/dek/palhub-types';
 import type {
     IDownloadURL,
     IFileInfo as NexusIFileInfo,
     IModFiles,
     IModInfo as NexusIModInfo,
 } from '@nexusmods/nexus-api';
-import type { TypeFunctionWithArgs, UseStatePair } from '@typed/common';
+import type { PromiseVoidFunctionWithArgs, UseStatePair, VoidFunctionWithArgs } from '@typed/common';
+import type {
+    DownloadModFileEvent,
+    ExtractModFileEvent,
+    IModInfoWithSavedConfig,
+    InstallModFileEvent,
+    ValidateGamePathReturnType,
+} from '@typed/palhub';
 import wait from '@utils/wait';
 import type { RendererIpcEvent } from 'electron-ipc-extended';
 import Link from 'next/link';
 import type { Dispatch, HTMLAttributes, MutableRefObject, ReactElement, SetStateAction } from 'react';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { Image } from 'react-bootstrap';
+import type { CarouselProps } from 'react-bootstrap/Carousel';
 import Carousel from 'react-bootstrap/Carousel';
+import Image from 'react-bootstrap/Image';
 
 // HIDDEN either because should not be shown to end user,
 // or because the information is shown in a different way <3
@@ -99,10 +108,10 @@ export default function ServerDetailsModal({
     server,
 }: ServerDetailsModalProps): ReactElement<ServerDetailsModalProps> | null {
     const applog: AppLogger = useAppLogger('ServerDetailsModal');
-    const { commonAppData }: CommonChecks = useCommonChecks();
+    const { handleError, commonAppData }: CommonChecks = useCommonChecks();
 
-    const { t, tA }: UseLocalizationReturn = useLocalization();
-    const { isDesktop }: UseScreenSizeReturn = useScreenSize();
+    const { t, tA }: Localization = useLocalization();
+    const { isDesktop }: ScreenSize = useScreenSize();
     const fullscreen: boolean = !isDesktop;
     const height: string = fullscreen ? 'calc(100vh - 96px)' : 'calc(100vh / 4 * 3)';
 
@@ -124,14 +133,14 @@ export default function ServerDetailsModal({
     const [hasGotMods, setHasGotMods]: UseStatePair<boolean> = useState<boolean>(false);
     const [hasGotPassword, setHasGotPassword]: UseStatePair<boolean> = useState<boolean>(false);
 
-    const addLogMessage = (message: string): void => {
+    const addLogMessage: VoidFunctionWithArgs<[message: string]> = useCallback((message: string): void => {
         setLogMessages((old: string[]): string[] => [...old, message]);
         if (logRef.current) setTimeout((): number => (logRef.current!.scrollTop = logRef.current!.scrollHeight));
-    };
+    }, []);
 
-    const resetLogMessages: VoidFunction = (): void => {
+    const resetLogMessages: VoidFunction = useCallback((): void => {
         setLogMessages([]);
-    };
+    }, []);
 
     const onCancel: VoidFunction = useCallback((): void => {
         setShow(false);
@@ -141,7 +150,7 @@ export default function ServerDetailsModal({
             setIsComplete(false);
             setServerpageID(0);
         }, 250);
-    }, []);
+    }, [setShow]);
 
     const onClickJoinServer: VoidFunction = useCallback((): void => {
         (async (): Promise<void> => {
@@ -165,8 +174,8 @@ export default function ServerDetailsModal({
 
                 // check all required mods are installed:
                 for (const [_index, { mod, file }] of servermodFiles.entries()) {
-                    const is_downloaded = await window.palhub('checkModFileIsDownloaded', cache_dir, file);
-                    const is_installed = await window.palhub('checkModIsInstalled', game_path, mod); //, file);
+                    const is_downloaded: boolean = await window.palhub('checkModFileIsDownloaded', cache_dir, file);
+                    const is_installed: boolean = await window.palhub('checkModIsInstalled', game_path, mod); //, file);
                     if (!is_downloaded) throw new Error('mod not downloaded:', { cause: { mod, file } });
                     if (!is_installed) throw new Error('mod not installed:', { cause: { mod, file } });
                 }
@@ -198,8 +207,8 @@ export default function ServerDetailsModal({
                 setHasGotPassword(!!passwordRef?.current?.value?.length);
                 setHasGotMods(false);
             }
-        })().catch((error: unknown) => handleError(error, applog));
-    }, [server, servermodFiles, passwordRef, rememberPassword, commonAppData, onCancel]);
+        })().catch((error: unknown): void => handleError(error, applog));
+    }, [server, servermodFiles, passwordRef, rememberPassword, commonAppData, onCancel, applog, handleError]);
 
     const onInstallServerModList: VoidFunction = useCallback((): void => {
         (async (): Promise<void> => {
@@ -231,7 +240,7 @@ export default function ServerDetailsModal({
             await wait(wait_between);
             addLogMessage('Uninstalled Previous Mods...');
 
-            const total = servermodFiles.length;
+            const total: number = servermodFiles.length;
             for (const [index, { mod, file }] of servermodFiles.entries()) {
                 if (!mod.mod_id) continue;
                 // console.log({index, mod, file});
@@ -287,15 +296,15 @@ export default function ServerDetailsModal({
             setTimeout((): void => {
                 setIsComplete(false);
             }, 1000);
-        })().catch((error: unknown) => handleError(error, applog));
-    }, [servermodFiles, handleError, resetLogMessages, addLogMessage]);
+        })().catch((error: unknown): void => handleError(error, applog));
+    }, [servermodFiles, handleError, resetLogMessages, addLogMessage, applog]);
 
     useEffect((): VoidFunction | void => {
         if (!window.ipc) return console.error('ipc not loaded');
 
         const remove_dl_handler: VoidFunction = window.ipc.on(
             'download-mod-file',
-            (_event: RendererIpcEvent, { mod_id, file_id, percentage }) => {
+            (_event: RendererIpcEvent, { mod_id, file_id, percentage }: DownloadModFileEvent): void => {
                 addLogMessage(`Downloading Mod: ${mod_id} / ${file_id} - ${percentage}%`);
             }
         );
@@ -312,7 +321,7 @@ export default function ServerDetailsModal({
                     file_id: _file_id,
                     entries: _entries,
                 }: InstallModFileEvent
-            ) => {
+            ): void => {
                 addLogMessage(`Installing Mod: ${name} v${version}`);
                 // console.log({_install_path, _mod_id, _file_id, _entries});
             }
@@ -320,27 +329,20 @@ export default function ServerDetailsModal({
 
         const remove_ex_handler: VoidFunction = window.ipc.on(
             'extract-mod-file',
-            (_event: RendererIpcEvent, { entry, outputPath: _outputPath }) => {
+            (_event: RendererIpcEvent, { entry, outputPath: _outputPath }: ExtractModFileEvent): void => {
                 addLogMessage(`Extracting: ${entry}`);
                 // console.log({entry, _outputPath});
             }
         );
 
-        return () => {
+        return (): void => {
             remove_dl_handler();
             remove_in_handler();
             remove_ex_handler();
         };
-    }, []);
+    }, [applog, rememberPassword, servermodFiles, addLogMessage]);
 
-    const shouldShowLogs = isComplete || isProcessing;
-
-    const safeParseIntoNumber: TypeFunctionWithArgs<[value: string | number], number> = (
-        value: string | number
-    ): number => {
-        if (typeof value === 'string') return Number.parseInt(value);
-        return value;
-    };
+    const shouldShowLogs: boolean = isComplete || isProcessing;
 
     useEffect((): void => {
         (async (): Promise<void> => {
@@ -356,7 +358,9 @@ export default function ServerDetailsModal({
 
             const server_mod_files: ServerModFile[] = [];
 
-            const addModAndFile = async (mod_id: number, file_id: number, type: ServerModFileType): Promise<void> => {
+            const addModAndFile: PromiseVoidFunctionWithArgs<
+                [mod_id: number, file_id: number, type: ServerModFileType]
+            > = async (mod_id: number, file_id: number, type: ServerModFileType): Promise<void> => {
                 console.log('getModAndFile:', mod_id, file_id, type);
                 try {
                     const mod: NexusIModInfo = await window.nexus(api_key, 'getModInfo', mod_id);
@@ -407,12 +411,22 @@ export default function ServerDetailsModal({
                 if (!is_downloaded || !is_installed) return setHasGotMods(false);
             }
             setHasGotMods(true);
-        })().catch((error: unknown) => handleError(error, applog));
-    }, [server, show, safeParseIntoNumber, setServerModFiles, setHasGotPassword, setHasGotMods, handleError]); //server, rememberPassword, passwordRef?.current?.value]);
+        })().catch((error: unknown): void => handleError(error, applog));
+    }, [
+        applog,
+        rememberPassword,
+        servermodFiles,
+        server,
+        show,
+        setServerModFiles,
+        setHasGotPassword,
+        setHasGotMods,
+        handleError,
+    ]); //server, rememberPassword, passwordRef?.current?.value]);
 
     if (!server) return null;
 
-    const carouselOptions = {
+    const carouselOptions: CarouselProps = {
         interval: null,
         indicators: false,
         controls: false,
@@ -420,8 +434,8 @@ export default function ServerDetailsModal({
         activeIndex: serverpageID,
     };
 
-    const headerText = `${server.serverName} - ${server.gameVersion}`;
-    const modalOptions = { show, setShow, onCancel, headerText, showX: !shouldShowLogs };
+    const headerText: string = `${server.serverName} - ${server.gameVersion}`;
+    const modalOptions: DekCommonAppModalProps = { show, setShow, onCancel, headerText, showX: !shouldShowLogs };
     return (
         <DekCommonAppModal {...modalOptions}>
             <DekDiv type="DekBody" className="d-block overflow-y-scroll" style={{ height }}>
@@ -437,7 +451,7 @@ export default function ServerDetailsModal({
                                     // disabled={true}
                                     choices={serverpageTypes}
                                     active={serverpageID}
-                                    onClick={(i, value) => {
+                                    onClick={(i: number, value: string | number): void => {
                                         console.log(`Setting Page: ${value}`);
                                         setServerpageID(i);
                                     }}
@@ -527,7 +541,7 @@ export default function ServerDetailsModal({
                             <div className="row">
                                 {Object.keys(server)
                                     .sort()
-                                    .map(
+                                    .map<keyof ServerListing, ReactElement<HTMLAttributes<HTMLDivElement>> | null>(
                                         (
                                             key: keyof ServerListing,
                                             i: number
@@ -558,9 +572,11 @@ export default function ServerDetailsModal({
                             )}
                             {!shouldShowLogs && (
                                 <Fragment>
-                                    {servermodFiles.map(({ file, mod }, i) => {
-                                        return <ModFileCard key={i} mod={mod} file={file} />;
-                                    })}
+                                    {servermodFiles.map<ServerModFile, ReactElement<ModFileCardProps>>(
+                                        ({ file, mod }: ServerModFile, i: number): ReactElement<ModFileCardProps> => {
+                                            return <ModFileCard key={i} mod={mod} file={file} />;
+                                        }
+                                    )}
                                     <div className="text-center mb-1">
                                         <button className="btn btn-success p-2 px-4" onClick={onInstallServerModList}>
                                             <strong>{t('modals.server-details.install-mods', { server })}</strong>

@@ -8,7 +8,7 @@
 import type { AppLogger } from '@hooks/use-app-logger';
 // import useAppLogger from '@hooks/use-app-logger';
 import type { DeepLinkNXMType, DeepLinkType } from '@hooks/use-deep-link-listener';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 // import useSelectedGame from '@hooks/useSelectedGame';
 import type { ConfigDataStoreApiKeys, ConfigDataStoreGames, ConfigDataStorePath, ErroredGames, Games } from '@main/config';
@@ -162,7 +162,9 @@ export function parseIntSafe(value: string | number | undefined, radix: number =
 }
 
 export function parseIntSafeArray(values: string[] | number[] | undefined, radix: number = 10): number[] | undefined {
-    return values?.map((value: string | number) => (typeof value === 'string' ? Number.parseInt(value, radix) : value));
+    return values?.map((value: string | number): number =>
+        typeof value === 'string' ? Number.parseInt(value, radix) : value
+    );
 }
 
 export declare type CommonAppDataProviderProps = Pick<HTMLAttributes<HTMLDivElement>, 'children'>;
@@ -171,10 +173,8 @@ export declare type CommonAppDataProviderProps = Pick<HTMLAttributes<HTMLDivElem
 const CommonAppDataContext: Context<CommonChecks> = createContext<CommonChecks>(undefined!);
 
 // CommonAppData Provider Component
-export const CommonAppDataProvider = ({
-    children,
-}: CommonAppDataProviderProps): ReactElement<CommonAppDataProviderProps> => {
-    const { t, /* tA, */ ready }: UseLocalizationReturn = useLocalization();
+export function CommonAppDataProvider({ children }: CommonAppDataProviderProps): ReactElement<CommonAppDataProviderProps> {
+    const { t, /* tA, */ ready }: Localization = useLocalization();
     // const applog: AppLogger = useAppLogger('hooks/use-common-checks');
     const [requiredModulesLoaded, setRequiredModulesLoaded]: UseStatePair<boolean> = useState<boolean>(false);
     const [commonAppData, setCommonAppData] = useState<CommonAppDataDataType | null>(null);
@@ -490,8 +490,8 @@ export const CommonAppDataProvider = ({
     // ensures that all required modules are fully loaded
     useEffect((): void => {
         if (typeof window === 'undefined') return;
-        const REQUIRED_MODULES = ['uStore', 'palhub', 'nexus', 'logger', 'ipc'];
-        if (REQUIRED_MODULES.some((module: string): boolean => !window[module as keyof Window])) return;
+        const REQUIRED_MODULES: (keyof Window)[] = ['uStore', 'palhub', 'nexus', 'logger', 'ipc'];
+        if (REQUIRED_MODULES.some((module: keyof Window): boolean => !window[module])) return;
         void refreshCommonDataWithRedirect();
     }, [ready, refreshCommonDataWithRedirect]);
 
@@ -515,7 +515,7 @@ export const CommonAppDataProvider = ({
             {children}
         </CommonAppDataContext.Provider>
     );
-};
+}
 
 // Export actual hook to useLocalization
 export default function useCommonChecks(): CommonChecks {

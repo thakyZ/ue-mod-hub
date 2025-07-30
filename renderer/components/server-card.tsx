@@ -8,7 +8,7 @@
 import type { ServerDetailsMods } from '@components/modals/server-details';
 import type { CommonIcon } from '@config/common-icons';
 import * as CommonIcons from '@config/common-icons';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { VoidFunctionWithArgs } from '@typed/common';
 import DOMPurify from 'dompurify';
@@ -512,7 +512,7 @@ export default function ServerCardComponent({
 }: ServerCardComponentProps): ReactElement<ServerCardComponentProps> {
     if (!server) server = DEFAULT_EXAMPLE_SERVER_LISTING;
 
-    const { t /* , tA */ }: UseLocalizationReturn = useLocalization();
+    const { t /* , tA */ }: Localization = useLocalization();
     const IconComponent: CommonIcon = CommonIcons.star;
     const realOnClick: VoidFunction = (): void => onClick(server);
 

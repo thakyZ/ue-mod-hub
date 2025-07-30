@@ -28,7 +28,7 @@ import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks } from '@hooks/use-common-checks';
 import type { GameInformation } from '@hooks/use-common-checks';
 import useCommonChecks, { parseIntSafe } from '@hooks/use-common-checks';
-import type { LocaleLeaves, UseLocalizationReturn } from '@hooks/use-localization';
+import type { LocaleLeaves, Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { BackgroundOpacityConstraint, Themes } from '@hooks/use-theme-system';
 import type { ConfigDataStore } from '@main/config';
@@ -86,7 +86,7 @@ export default function SettingsPage({
     ThemeController,
 }: SettingsPageProps): ReactElement<SettingsPageProps> | null {
     const applog: AppLogger = useAppLogger('SettingsPage');
-    const { t, tA, changeLanguage, language, VALID_LANGUAGES }: UseLocalizationReturn = useLocalization();
+    const { t, tA, changeLanguage, language, VALID_LANGUAGES }: Localization = useLocalization();
     const { requiredModulesLoaded, commonAppData, handleError }: CommonChecks = useCommonChecks();
     const [showUE4SSInstall, setShowUE4SSInstall]: UseStatePair<boolean> = useState<boolean>(false);
     // const [showUE4SSSettings, setShowUE4SSSettings]: UseStatePair<boolean> = useState<boolean>(false);
@@ -96,9 +96,9 @@ export default function SettingsPage({
     const isDevEnvironment: boolean = checkIsDevEnvironment();
     const [step, setStep]: UseStatePair<number> = useState<number>(0);
 
-    const game = commonAppData?.selectedGame;
+    const game: GameInformation | undefined = commonAppData?.selectedGame;
 
-    const onClickHelp = useCallback((): void => {
+    const onClickHelp: VoidFunction = useCallback((): void => {
         if (!window.ipc) return console.error('ipc not loaded');
         window.ipc.invoke('open-child-window', 'help').catch((error: unknown): void => handleError(error, applog));
     }, [applog, handleError]);
@@ -226,7 +226,7 @@ function SettingsPage_SetupStep({
     setStep,
 }: SettingsPage_SetupStepProps): ReactElement<SettingsPage_SetupStepProps> | null {
     const applog: AppLogger = useAppLogger('SettingsPage_SetupStep');
-    const { t, tA }: UseLocalizationReturn = useLocalization();
+    const { t, tA }: Localization = useLocalization();
     const { requiredModulesLoaded, commonAppData, handleError }: CommonChecks = useCommonChecks();
     const cache_dir: string | null = useMemo((): string | null => commonAppData?.cache, [commonAppData?.cache]);
     const game_path: string | undefined = useMemo(
@@ -428,7 +428,7 @@ function SettingsPage_ApplicationRequirements({
     const [nexusApiKeyHandler, setNexusApiKeyHandler]: UseStatePair<NodeJS.Timeout | null> =
         useState<NodeJS.Timeout | null>(null);
     const [showNexusKey, setShowNexusKey]: UseStatePair<boolean> = useState<boolean>(false);
-    const { t }: UseLocalizationReturn = useLocalization();
+    const { t }: Localization = useLocalization();
 
     const onUpdateCacheDirectory: VoidFunctionWithArgs<[name: string | null, new_value: string]> = useCallback(
         (_name: string | null, new_value: string): void => {
@@ -572,7 +572,7 @@ function SettingsPage_ApplicationRequirements({
 
 function SettingsPage_UseNexusDeepLinks(): ReactElement {
     const applog: AppLogger = useAppLogger('SettingsPage_SetupStep');
-    const { t }: UseLocalizationReturn = useLocalization();
+    const { t }: Localization = useLocalization();
     const { requiredModulesLoaded, handleError }: CommonChecks = useCommonChecks();
 
     type ConfigDataStorePartial = Pick<ConfigDataStore, 'nxm-links'>;
@@ -616,7 +616,7 @@ function SettingsPage_UseNexusDeepLinks(): ReactElement {
 
 function SettingsPage_ApplicationCustomize(): ReactElement {
     const applog: AppLogger = useAppLogger('SettingsPage_ApplicationCustomize');
-    const { t }: UseLocalizationReturn = useLocalization();
+    const { t }: Localization = useLocalization();
     const { requiredModulesLoaded, handleError }: CommonChecks = useCommonChecks();
 
     type ConfigDataStorePartial = Pick<
@@ -716,7 +716,7 @@ export declare interface SettingsPage_ThemeProps {
 function SettingsPage_Theme({ ThemeController }: SettingsPage_ThemeProps): ReactElement<SettingsPage_ThemeProps> | null {
     const { requiredModulesLoaded /* , commonAppData */ }: CommonChecks = useCommonChecks();
     // const game_id: Games | undefined = commonAppData?.selectedGame?.id;
-    const { t, tA }: UseLocalizationReturn = useLocalization();
+    const { t, tA }: Localization = useLocalization();
 
     // console.log('ThemeController', ThemeController.bg_opac);
 
@@ -818,7 +818,7 @@ function SettingsPage_Game({
     }: ActiveGame = useActiveGame();
 
     // const [knownGamePath, setKnownGamePath]: UseStatePair<string | undefined> = useState<string | undefined>(game?.path);
-    const { t /* , tA */ }: UseLocalizationReturn = useLocalization();
+    const { t /* , tA */ }: Localization = useLocalization();
 
     // const handleGamePathChange: VoidFunctionWithArgs<[name: Games, new_value: string]> = useCallback((name: Games, new_value: string): void => {
     //     updateSelectedGamePath(game.id, new_value);

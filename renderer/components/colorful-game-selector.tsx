@@ -2,13 +2,13 @@ import ActiveGameSelector from '@components/active-game-selector';
 import GradientBanner from '@components/core/gradient-banner';
 import type { ActiveGame } from '@hooks/use-active-game';
 import useActiveGame from '@hooks/use-active-game';
-import type { UseLocalizationReturn } from '@hooks/use-localization';
+import type { Localization } from '@hooks/use-localization';
 import useLocalization from '@hooks/use-localization';
 import type { ReactElement } from 'react';
 import React from 'react';
 
 export default function ColorfulGameSelector(): ReactElement {
-    const { t }: UseLocalizationReturn = useLocalization();
+    const { t }: Localization = useLocalization();
     const { gamesArray, selectedGameID }: ActiveGame = useActiveGame();
 
     return (

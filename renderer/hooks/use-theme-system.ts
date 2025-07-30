@@ -5,6 +5,7 @@
 */
 // import { parse } from 'dotenv';
 import { parseIntSafe } from '@hooks/use-common-checks';
+import type { TypeFunctionWithArgs } from '@typed/common';
 import { useCallback, useEffect, useState } from 'react';
 
 // theme files should be located in /public/themes
@@ -58,16 +59,19 @@ export default function useThemeSystem(_game_id: string): UseThemeSystemReturn {
     const [bg_opac, setTempBgOpac] = useState<BackgroundOpacityConstraint>(0);
     const [bg_id, setTempBgID] = useState<number>(0);
 
-    const setThemeID = useCallback((newtheme: Themes): number | null => {
-        if (typeof window === 'undefined') return null;
-        if (!THEMES.includes(newtheme)) return null;
-        const new_id: number = THEMES.indexOf(newtheme);
-        localStorage.setItem('utheme-id', new_id.toString());
-        setTempThemeID(new_id);
-        return new_id;
-    }, []);
+    const setThemeID: TypeFunctionWithArgs<[newtheme: Themes], number | null> = useCallback(
+        (newtheme: Themes): number | null => {
+            if (typeof window === 'undefined') return null;
+            if (!THEMES.includes(newtheme)) return null;
+            const new_id: number = THEMES.indexOf(newtheme);
+            localStorage.setItem('utheme-id', new_id.toString());
+            setTempThemeID(new_id);
+            return new_id;
+        },
+        []
+    );
 
-    const setBgID = useCallback((newbg: number): number | null => {
+    const setBgID: TypeFunctionWithArgs<[newbg: number], number | null> = useCallback((newbg: number): number | null => {
         if (typeof window === 'undefined') return null;
         if (newbg < 0 || newbg >= 10) return null;
         localStorage.setItem('utheme-bg', newbg.toString());
@@ -75,16 +79,17 @@ export default function useThemeSystem(_game_id: string): UseThemeSystemReturn {
         return newbg;
     }, []);
 
-    const setBgOpac = useCallback((newopac: BackgroundOpacityConstraint): BackgroundOpacityConstraint | null => {
-        if (typeof window === 'undefined') return null;
-        localStorage.setItem('utheme-bgopac', newopac.toString());
-        setTempBgOpac(newopac);
-        return newopac;
-    }, []);
+    const setBgOpac: TypeFunctionWithArgs<[newbg: BackgroundOpacityConstraint], BackgroundOpacityConstraint | null> =
+        useCallback((newopac: BackgroundOpacityConstraint): BackgroundOpacityConstraint | null => {
+            if (typeof window === 'undefined') return null;
+            localStorage.setItem('utheme-bgopac', newopac.toString());
+            setTempBgOpac(newopac);
+            return newopac;
+        }, []);
 
     useEffect((): void => {
         // prettier-ignore
-        const lockIntToBackgroundOpacityConstraint = (value: string | undefined | null): BackgroundOpacityConstraint | undefined =>
+        const lockIntToBackgroundOpacityConstraint: TypeFunctionWithArgs<[value: string | undefined | null], BackgroundOpacityConstraint | undefined> = (value: string | undefined | null): BackgroundOpacityConstraint | undefined =>
             value ? Math.min(Math.max(parseIntSafe(value)!, 0), 2) as BackgroundOpacityConstraint | undefined : undefined;
         let base_theme_id: number = 0;
         let base_theme_bg: number = 0;

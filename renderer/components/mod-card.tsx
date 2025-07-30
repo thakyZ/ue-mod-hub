@@ -9,7 +9,7 @@ import * as CommonIcons from '@config/common-icons';
 import type { AppLogger } from '@hooks/use-app-logger';
 import useAppLogger from '@hooks/use-app-logger';
 import type { CommonChecks } from '@hooks/use-common-checks';
-import useCommonChecks, { handleError } from '@hooks/use-common-checks';
+import useCommonChecks from '@hooks/use-common-checks';
 import type { IModInfoWithSavedConfig } from '@main/dek/palhub-types';
 import type { PropsMouseEventHandler } from '@typed/common';
 import DOMPurify from 'dompurify';
@@ -102,7 +102,7 @@ export default function ModCardComponent({
         [onClick, mod]
     );
 
-    const { requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
+    const { handleError, requiredModulesLoaded, commonAppData }: CommonChecks = useCommonChecks();
     const game_path: string | undefined = commonAppData?.selectedGame?.path;
     const cache_dir: string | null = commonAppData?.cache;
 
@@ -118,7 +118,7 @@ export default function ModCardComponent({
                 console.error('error uninstalling mod:', error);
             }
         })().catch((error: unknown): void => handleError(error, applog));
-    }, [mod, requiredModulesLoaded, game_path, refreshModList]);
+    }, [applog, handleError, game_path, mod, requiredModulesLoaded, refreshModList]);
 
     const onUninstallModCache: VoidFunction = useCallback((): void => {
         (async (): Promise<void> => {
@@ -132,7 +132,7 @@ export default function ModCardComponent({
             }
             // handleCancel();
         })().catch((error: unknown): void => handleError(error, applog));
-    }, [mod, requiredModulesLoaded, cache_dir, refreshModList]);
+    }, [applog, cache_dir, handleError, mod, refreshModList, requiredModulesLoaded]);
 
     const onClickRemoveDeleteFiles: VoidFunction = useCallback((): void => {
         if (mod.available) {
@@ -147,7 +147,7 @@ export default function ModCardComponent({
                 onUninstallModCache();
                 break;
         }
-    }, [mod, onUninstallModFiles, modlistID]);
+    }, [mod, onUninstallModFiles, onUninstallModCache, modlistID]);
 
     if (local || mod.local) {
         return (
@@ -227,21 +227,21 @@ export default function ModCardComponent({
         </Col>
     );
 
-    return (
-        <div className="col-3">
-            <div className="flex items-center">
-                {mod?.picture ? <Image src={mod?.picture} alt={mod?.name} fluid /> : undefined}
-            </div>
-            <div className="ml-4">
-                <h2 className="text-xl font-semibold text-gray-800">{mod?.name}</h2>
-                <p className="text-gray-500">{mod?.author}</p>
-            </div>
-            <p className="text-gray-600 mt-2">{mod?.summary}</p>
-            <div className="mt-4">
-                <a href="#" className="text-blue-600 hover:underline">
-                    Read More
-                </a>
-            </div>
-        </div>
-    );
+    // return (
+    //     <div className="col-3">
+    //         <div className="flex items-center">
+    //             {mod?.picture ? <Image src={mod?.picture} alt={mod?.name} fluid /> : undefined}
+    //         </div>
+    //         <div className="ml-4">
+    //             <h2 className="text-xl font-semibold text-gray-800">{mod?.name}</h2>
+    //             <p className="text-gray-500">{mod?.author}</p>
+    //         </div>
+    //         <p className="text-gray-600 mt-2">{mod?.summary}</p>
+    //         <div className="mt-4">
+    //             <a href="#" className="text-blue-600 hover:underline">
+    //                 Read More
+    //             </a>
+    //         </div>
+    //     </div>
+    // );
 }

@@ -11,6 +11,19 @@ import type {
     SetStateAction,
 } from 'react';
 
+export declare type BufferEncoding =
+    | 'ascii'
+    | 'utf8'
+    // eslint-disable-next-line unicorn/text-encoding-identifier-case
+    | 'utf-8'
+    | 'utf16le'
+    | 'ucs2'
+    | 'ucs-2'
+    | 'base64'
+    | 'latin1'
+    | 'binary'
+    | 'hex';
+
 export declare interface BaseSyntheticEvent<E = object, C = unknown, T = unknown> {
     nativeEvent: E;
     currentTarget: C;
