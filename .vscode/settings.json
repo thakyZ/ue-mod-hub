@@ -30,8 +30,10 @@
         "yMove" // Conjunction of Y move
     ],
     "cSpell.words": [
+        "UeModHub", // Name of the program
         "Dekita", // Author of the program
         "bbob", // Package prefix
+        "xhayper", // Package prefix
         "luxon", // Package name
         "unrar", // To extract a rar file
         "SVGs", // Package prefix and plural of SVG

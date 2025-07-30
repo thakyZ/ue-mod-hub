@@ -36,10 +36,10 @@ export default function DekCommonAppModal({
         setShow(false);
         onCancel();
     };
-    type ChildrenArrayIndicie = ReturnType<typeof Children.toArray>[0];
-    const childrenArray: Array<ChildrenArrayIndicie> = Children.toArray(children);
+    type ChildrenArrayIndicies = ReturnType<typeof Children.toArray>[0];
+    const childrenArray: Array<ChildrenArrayIndicies> = Children.toArray(children);
     // prettier-ignore
-    const bodyChildren: Array<ReactElement<DekDivProps>> = childrenArray.filter<ChildrenArrayIndicie, ReactElement<DekDivProps>>((child: ChildrenArrayIndicie): boolean => {
+    const bodyChildren: Array<ReactElement<DekDivProps>> = childrenArray.filter<ChildrenArrayIndicies, ReactElement<DekDivProps>>((child: ChildrenArrayIndicies): boolean => {
         return typeof child !== 'boolean'
             && typeof child === 'object'
             && child !== null
@@ -51,7 +51,7 @@ export default function DekCommonAppModal({
             && (child.props as { type: string }).type === 'DekBody';
     });
     // prettier-ignore
-    const footChildren: Array<ReactElement<DekDivProps>> = childrenArray.filter<ChildrenArrayIndicie, ReactElement<DekDivProps>>((child: ChildrenArrayIndicie): boolean => {
+    const footChildren: Array<ReactElement<DekDivProps>> = childrenArray.filter<ChildrenArrayIndicies, ReactElement<DekDivProps>>((child: ChildrenArrayIndicies): boolean => {
         return typeof child !== 'boolean'
             && typeof child === 'object'
             && child !== null
